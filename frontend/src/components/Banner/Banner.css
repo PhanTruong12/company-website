@@ -1,0 +1,146 @@
+.banner-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px 80px;
+  background-color: #e5e5e5;
+  background-image: 
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  background-size: 20px 20px;
+  min-height: 400px;
+  position: relative;
+}
+
+.logo-section {
+  flex: 0 0 auto;
+}
+
+.logo-block {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  padding: 40px 50px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  min-width: 280px;
+}
+
+.logo-graphic {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo-text {
+  text-align: center;
+}
+
+.logo-title {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 2px;
+  font-family: 'Arial', sans-serif;
+}
+
+.logo-title::first-letter {
+  font-size: 1.2em;
+}
+
+.logo-subtitle {
+  color: white;
+  font-size: 0.9rem;
+  margin: 10px 0 0 0;
+  letter-spacing: 3px;
+  font-weight: 300;
+}
+
+.company-info-section {
+  flex: 1;
+  padding-left: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.company-name {
+  color: #1a365d;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.company-services {
+  color: #1a365d;
+  font-size: 1.3rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.company-stones {
+  color: #1a365d;
+  font-size: 1rem;
+  margin: 0;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.contact-button {
+  background-color: #000000;
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  width: fit-content;
+}
+
+.contact-button:hover {
+  background-color: #333333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1024px) {
+  .banner-container {
+    flex-direction: column;
+    padding: 40px 30px;
+    gap: 40px;
+  }
+
+  .company-info-section {
+    padding-left: 0;
+    text-align: center;
+    align-items: center;
+  }
+
+  .logo-block {
+    min-width: auto;
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .banner-container {
+    padding: 30px 20px;
+  }
+
+  .company-name {
+    font-size: 1.5rem;
+  }
+
+  .company-services {
+    font-size: 1rem;
+  }
+
+  .logo-title {
+    font-size: 2rem;
+  }
+}
+
