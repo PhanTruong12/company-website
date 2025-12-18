@@ -37,6 +37,22 @@ const connectDB = async () => {
       console.error('   2. Database user exists in MongoDB Atlas');
       console.error('   3. Password does not contain special characters that need URL encoding');
       console.error('   4. If password has special characters, use encodeURIComponent()');
+    } else if (error.message.includes('Could not connect to any servers') || 
+               error.message.includes('IP whitelist') ||
+               error.name === 'MongooseServerSelectionError' ||
+               (error.reason && error.reason.type === 'ReplicaSetNoPrimary')) {
+      console.error('   ⚠️  IP WHITELIST ERROR - This is the most common issue!');
+      console.error('   Your server IP address is not whitelisted in MongoDB Atlas.');
+      console.error('\n   🔧 How to fix:');
+      console.error('   1. Go to MongoDB Atlas Dashboard: https://cloud.mongodb.com/');
+      console.error('   2. Select your cluster → "Network Access" (or "Security" → "Network Access")');
+      console.error('   3. Click "Add IP Address"');
+      console.error('   4. For Railway/Render/Vercel deployments, add: 0.0.0.0/0 (allow all IPs)');
+      console.error('      OR add specific IPs if you know them');
+      console.error('   5. Wait 1-2 minutes for changes to take effect');
+      console.error('   6. Redeploy your application');
+      console.error('\n   📝 Note: 0.0.0.0/0 allows all IPs (less secure but works for cloud deployments)');
+      console.error('   For production, consider using specific IP ranges if available.');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
       console.error('   Network error. Please check:');
       console.error('   1. Internet connection');
@@ -46,6 +62,7 @@ const connectDB = async () => {
       console.error('   Connection timeout. Please check:');
       console.error('   1. IP address is whitelisted in MongoDB Atlas');
       console.error('   2. Network firewall settings');
+      console.error('   3. MongoDB Atlas cluster is running');
     } else {
       console.error(`   ${error.message}`);
     }

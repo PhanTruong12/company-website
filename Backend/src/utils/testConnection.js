@@ -33,6 +33,17 @@ async function testMongoDB() {
       console.error('   - Username and password in connection string');
       console.error('   - Special characters in password need URL encoding');
       console.error('   - Database user exists in MongoDB Atlas');
+    } else if (error.message.includes('Could not connect to any servers') || 
+               error.message.includes('IP whitelist') ||
+               error.name === 'MongooseServerSelectionError' ||
+               (error.reason && error.reason.type === 'ReplicaSetNoPrimary')) {
+      console.error('   ⚠️  IP WHITELIST ERROR!');
+      console.error('   Your IP address is not whitelisted in MongoDB Atlas.');
+      console.error('\n   Quick fix:');
+      console.error('   1. Go to MongoDB Atlas → Network Access');
+      console.error('   2. Add IP Address: 0.0.0.0/0 (allows all IPs)');
+      console.error('   3. Wait 1-2 minutes, then try again');
+      console.error('\n   See Backend/RAILWAY_MONGODB_FIX.md for detailed instructions');
     } else {
       console.error(`   ${error.message}`);
     }
