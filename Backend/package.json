@@ -11,8 +11,13 @@
     "test:api": "node src/utils/testAPI.js",
     "test:connection": "node src/utils/testConnection.js",
     "setup:env": "node src/utils/setupEnv.js",
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "create:env": "node scripts/create-env-files.js",
+    "create:env:dev": "node scripts/create-env-files.js development",
+    "create:env:prod": "node scripts/create-env-files.js production",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "dev:local": "cross-env NODE_ENV=development nodemon server.js",
+    "prod:local": "cross-env NODE_ENV=production node server.js",
     "seed": "node src/utils/seed.js",
     "migrate:atlas": "node scripts/migrate-to-atlas.js",
     "migrate:cloudinary": "node src/utils/migrateToCloudinary.js",
@@ -36,6 +41,7 @@
     "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "nodemon": "^3.1.11"
   }
 }

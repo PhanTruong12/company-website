@@ -18,15 +18,35 @@ const connectDB = async () => {
       process.exit(1);
     }
 
-    // Kết nối MongoDB
-    const conn = await mongoose.connect(mongoURI, {
-      // Options để tránh deprecation warnings
-      serverSelectionTimeoutMS: 5000, // Timeout sau 5 giây
-      socketTimeoutMS: 45000,
-    });
+    // Kết nối MongoDB với retry logic
+    const maxRetries = 3;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const conn = await mongoose.connect(mongoURI, {
+          // Options để tránh deprecation warnings
+          serverSelectionTimeoutMS: 10000, // Tăng timeout lên 10 giây
+          socketTimeoutMS: 45000,
+          maxPoolSize: 10,
+          retryWrites: true,
+          w: 'majority'
+        });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`   Database: ${conn.connection.name}`);
+        console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+        console.log(`   Database: ${conn.connection.name}`);
+        return; // Thành công, thoát khỏi function
+      } catch (error) {
+        lastError = error;
+        if (attempt < maxRetries) {
+          console.log(`⚠️  Connection attempt ${attempt} failed, retrying... (${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
+        }
+      }
+    }
+    
+    // Nếu tất cả retries đều fail, throw error để xử lý ở catch block
+    throw lastError;
   } catch (error) {
     console.error('❌ MongoDB Connection Error:');
     
@@ -40,19 +60,26 @@ const connectDB = async () => {
     } else if (error.message.includes('Could not connect to any servers') || 
                error.message.includes('IP whitelist') ||
                error.name === 'MongooseServerSelectionError' ||
-               (error.reason && error.reason.type === 'ReplicaSetNoPrimary')) {
+               (error.reason && error.reason.type === 'ReplicaSetNoPrimary') ||
+               (error.cause && error.cause.type === 'ReplicaSetNoPrimary')) {
+      console.error('\n' + '='.repeat(70));
       console.error('   ⚠️  IP WHITELIST ERROR - This is the most common issue!');
-      console.error('   Your server IP address is not whitelisted in MongoDB Atlas.');
-      console.error('\n   🔧 How to fix:');
-      console.error('   1. Go to MongoDB Atlas Dashboard: https://cloud.mongodb.com/');
-      console.error('   2. Select your cluster → "Network Access" (or "Security" → "Network Access")');
-      console.error('   3. Click "Add IP Address"');
-      console.error('   4. For Railway/Render/Vercel deployments, add: 0.0.0.0/0 (allow all IPs)');
-      console.error('      OR add specific IPs if you know them');
-      console.error('   5. Wait 1-2 minutes for changes to take effect');
-      console.error('   6. Redeploy your application');
-      console.error('\n   📝 Note: 0.0.0.0/0 allows all IPs (less secure but works for cloud deployments)');
-      console.error('   For production, consider using specific IP ranges if available.');
+      console.error('='.repeat(70));
+      console.error('   Your server IP address is NOT whitelisted in MongoDB Atlas.');
+      console.error('   This is REQUIRED for Railway/Render/Vercel deployments.');
+      console.error('\n   🔧 STEP-BY-STEP FIX:');
+      console.error('   1. Open MongoDB Atlas: https://cloud.mongodb.com/');
+      console.error('   2. Select your project → Click on your cluster');
+      console.error('   3. Click "Network Access" tab (left sidebar)');
+      console.error('   4. Click green "Add IP Address" button');
+      console.error('   5. Select "Allow Access from Anywhere"');
+      console.error('      OR manually enter: 0.0.0.0/0');
+      console.error('   6. Click "Confirm"');
+      console.error('   7. Wait 2-3 minutes for MongoDB to update');
+      console.error('   8. Go to Railway → Redeploy your service');
+      console.error('\n   ⚠️  IMPORTANT: You MUST do this BEFORE the app can connect!');
+      console.error('   📝 0.0.0.0/0 = Allow all IPs (works for cloud platforms)');
+      console.error('='.repeat(70) + '\n');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
       console.error('   Network error. Please check:');
       console.error('   1. Internet connection');
@@ -68,7 +95,13 @@ const connectDB = async () => {
     }
     
     console.error('\n   Full error:', error);
-    process.exit(1);
+    // Không exit process trong production để server vẫn có thể chạy
+    // Chỉ exit trong development để developer biết có lỗi
+    if (process.env.NODE_ENV === 'development') {
+      process.exit(1);
+    }
+    // Trong production, chỉ log error và tiếp tục
+    // Routes sẽ xử lý lỗi khi database chưa kết nối
   }
 };
 

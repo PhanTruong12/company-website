@@ -83,6 +83,26 @@ const areStoneTypesEqual = (name1, name2) => {
  */
 const getStoneTypes = async (req, res) => {
   try {
+    // Kiểm tra database connection trước
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      // Database chưa kết nối, trả về danh sách mặc định
+      console.warn('⚠️  Database not connected, returning default stone types');
+      const defaultTypes = DEFAULT_STONE_TYPES.map((type, index) => ({
+        _id: `st_${index}`,
+        name: type,
+        slug: createSlug(type),
+        isActive: true
+      })).sort((a, b) => a.name.localeCompare(b.name));
+      
+      return res.json({
+        success: true,
+        message: 'Lấy danh sách loại đá thành công (default)',
+        data: defaultTypes,
+        count: defaultTypes.length
+      });
+    }
+    
     // 1. Lấy danh sách stoneType unique từ InteriorImage (các loại đá đã được sử dụng)
     const usedStoneTypes = await InteriorImage.distinct('stoneType');
     
