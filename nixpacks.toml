@@ -1,0 +1,16 @@
+# Nixpacks config cho monorepo
+# Nếu Root Directory = Backend, file này không cần thiết
+# Nếu Root Directory = root, file này sẽ giúp build Backend/
+
+[providers]
+node = "18"
+
+[phases.setup]
+nixPkgs = ['nodejs-18_x']
+
+[phases.install]
+cmds = ['cd Backend && npm install']
+
+[start]
+cmd = 'cd Backend && npm start'
+

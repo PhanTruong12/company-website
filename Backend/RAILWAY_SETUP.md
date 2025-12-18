@@ -37,12 +37,12 @@ Root Directory **PHẢI** được set trên Railway Dashboard.
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm start",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "startCommand": "npm start"
   }
 }
 ```
+
+**Lưu ý:** Railway chỉ hỗ trợ các properties cơ bản trong `railway.json`. Các settings như restart policy phải được cấu hình trên Railway Dashboard.
 
 ### ❌ KHÔNG LÀM THẾ NÀY:
 ```json
