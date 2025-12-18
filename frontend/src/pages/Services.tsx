@@ -1,0 +1,13 @@
+const Services = () => {
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-[#1e3a5f] mb-4">Services</h1>
+        <p className="text-lg text-gray-700">Coming soon...</p>
+      </div>
+    </div>
+  );
+};
+
+export default Services;
+

@@ -1,0 +1,183 @@
+/* Logo.css - Styles cho Logo component TND Granite */
+
+/* Base Logo Container */
+.tnd-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tnd-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tnd-logo-image {
+  display: block;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Size Variants */
+.tnd-logo--small .tnd-logo-container {
+  width: 3.125rem; /* 50px */
+  height: 3.125rem;
+}
+
+.tnd-logo--small .tnd-logo-image {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.tnd-logo--medium .tnd-logo-container {
+  width: 6.25rem; /* 100px */
+  height: 6.25rem;
+}
+
+.tnd-logo--medium .tnd-logo-image {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.tnd-logo--large .tnd-logo-container {
+  width: 12.5rem; /* 200px */
+  height: 12.5rem;
+}
+
+@media (min-width: 768px) {
+  .tnd-logo--large .tnd-logo-container {
+    width: 15rem; /* 240px */
+    height: 15rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tnd-logo--large .tnd-logo-container {
+    width: 18.75rem; /* 300px */
+    height: 18.75rem;
+  }
+}
+
+.tnd-logo--large .tnd-logo-image {
+  width: 90%;
+  height: 90%;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.tnd-logo--xlarge .tnd-logo-container {
+  width: 15rem; /* 240px */
+  height: 15rem;
+}
+
+@media (min-width: 768px) {
+  .tnd-logo--xlarge .tnd-logo-container {
+    width: 18.75rem; /* 300px */
+    height: 18.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tnd-logo--xlarge .tnd-logo-container {
+    width: 25rem; /* 400px */
+    height: 25rem;
+  }
+}
+
+.tnd-logo--xlarge .tnd-logo-image {
+  width: 90%;
+  height: 90%;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+/* Variant: Dark (với background box) */
+.tnd-logo--dark.tnd-logo--with-bg .tnd-logo-container {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2a4a6f 100%);
+  border-radius: 1rem; /* 16px */
+  padding: 1rem; /* 16px */
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tnd-logo--dark.tnd-logo--with-bg .tnd-logo-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s;
+}
+
+.tnd-logo--dark.tnd-logo--with-bg:hover .tnd-logo-container::before {
+  left: 100%;
+}
+
+.tnd-logo--dark.tnd-logo--with-bg:hover .tnd-logo-container {
+  transform: translateY(-8px);
+  box-shadow: 
+    0 35px 60px -12px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Variant: Light (không background) */
+.tnd-logo--light .tnd-logo-container {
+  background: transparent;
+  padding: 0.5rem;
+}
+
+.tnd-logo--light .tnd-logo-image {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .tnd-logo--large .tnd-logo-container {
+    width: 10rem; /* 160px */
+    height: 10rem;
+  }
+
+  .tnd-logo--xlarge .tnd-logo-container {
+    width: 12rem; /* 192px */
+    height: 12rem;
+  }
+
+  .tnd-logo--dark.tnd-logo--with-bg .tnd-logo-container {
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+}
+
+/* Animation */
+@keyframes logoFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tnd-logo {
+  animation: logoFadeIn 0.6s ease-out;
+}
+

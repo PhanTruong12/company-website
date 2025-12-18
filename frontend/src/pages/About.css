@@ -1,0 +1,265 @@
+/* About.css - Styles cho trang Giới thiệu */
+.about-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 40px 20px;
+}
+
+@media (min-width: 768px) {
+  .about-page {
+    padding: 60px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-page {
+    padding: 80px 40px;
+  }
+}
+
+.about-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header với H1 */
+.about-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .about-header {
+    margin-bottom: 64px;
+  }
+}
+
+.about-h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 32px 0;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .about-h1 {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-h1 {
+    font-size: 3rem;
+  }
+}
+
+.about-hero-image {
+  margin-top: 32px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.about-hero-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 500px;
+}
+
+@media (min-width: 768px) {
+  .about-hero-image img {
+    max-height: 600px;
+  }
+}
+
+/* Sections */
+.about-section {
+  margin-bottom: 56px;
+}
+
+@media (min-width: 768px) {
+  .about-section {
+    margin-bottom: 72px;
+  }
+}
+
+.about-h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #667eea;
+  display: inline-block;
+}
+
+@media (min-width: 768px) {
+  .about-h2 {
+    font-size: 2rem;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-h2 {
+    font-size: 2.25rem;
+  }
+}
+
+.about-h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 32px 0 16px 0;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .about-h3 {
+    font-size: 1.5rem;
+    margin: 40px 0 20px 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .about-h3 {
+    font-size: 1.625rem;
+  }
+}
+
+/* Content với hình ảnh */
+.about-content-with-image {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+@media (min-width: 768px) {
+  .about-content-with-image {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 32px;
+  }
+}
+
+.about-text {
+  flex: 1;
+}
+
+.about-text p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #4a5568;
+  margin: 0 0 20px 0;
+}
+
+@media (min-width: 768px) {
+  .about-text p {
+    font-size: 1.0625rem;
+  }
+}
+
+.about-text p:last-child {
+  margin-bottom: 0;
+}
+
+.about-text strong {
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.about-image-wrapper {
+  flex: 0 0 100%;
+  margin-top: 8px;
+}
+
+@media (min-width: 768px) {
+  .about-image-wrapper {
+    flex: 0 0 40%;
+    max-width: 400px;
+  }
+}
+
+.about-image-wrapper img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+/* Image Caption */
+.image-caption {
+  font-size: 0.8125rem;
+  color: #718096;
+  font-style: italic;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Stone Types Grid */
+.stone-types-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  margin-top: 32px;
+}
+
+@media (min-width: 768px) {
+  .stone-types-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+}
+
+.stone-type-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stone-type-image {
+  margin-bottom: 16px;
+}
+
+.stone-type-image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: block;
+  max-height: 250px;
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .stone-type-image img {
+    max-height: 300px;
+  }
+}
+
+.stone-type-item .about-h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.stone-type-item p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #4a5568;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .stone-type-item p {
+    font-size: 1rem;
+  }
+}
+

@@ -1,0 +1,97 @@
+/* ShowroomDetail.css - Styles cho trang chi tiết showroom */
+.showroom-detail {
+  min-height: 100vh;
+  padding: 48px 16px;
+  background: #f6f4ee;
+}
+
+.showroom-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.back-button {
+  margin-bottom: 24px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: #f0f0f0;
+  border-color: #1e3a5f;
+  color: #1e3a5f;
+}
+
+.showroom-detail-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .showroom-detail-content {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.showroom-detail-image {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.showroom-detail-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.showroom-detail-info h1 {
+  font-size: 2rem;
+  color: #1e3a5f;
+  margin-bottom: 16px;
+}
+
+.showroom-detail-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.showroom-detail-meta .tag {
+  padding: 6px 12px;
+  background: rgba(30, 58, 95, 0.1);
+  color: #1e3a5f;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.showroom-detail-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #666;
+}
+
+.showroom-detail-loading,
+.showroom-detail-error,
+.showroom-detail-not-found {
+  text-align: center;
+  padding: 64px;
+  color: #666;
+}
+
+.showroom-detail-error {
+  color: #c33;
+}
+
