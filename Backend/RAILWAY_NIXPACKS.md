@@ -1,38 +1,46 @@
 # Railway Nixpacks Configuration
 
-Hướng dẫn cấu hình Railway sử dụng Nixpacks builder.
+Hướng dẫn cấu hình Railway sử dụng Nixpacks builder cho monorepo.
+
+## ⚠️ QUAN TRỌNG: Root Directory
+
+Railway cần được cấu hình **Root Directory = `Backend`** để Nixpacks detect đúng Node.js project.
 
 ## 📋 Files Cấu Hình
 
-### 1. `nixpacks.toml`
+### 1. `Backend/nixpacks.toml`
 File này chỉ định cách Nixpacks build project:
 - Node.js version: 18
 - Build command: `npm install`
 - Start command: `npm start`
 
-### 2. `.nvmrc` và `.node-version`
+### 2. `nixpacks.toml` (ở root)
+File backup nếu Railway không set Root Directory:
+- Tự động `cd Backend` và build
+
+### 3. `.nvmrc` và `.node-version`
 Chỉ định Node.js version 18 cho Nixpacks detect.
 
-### 3. `railway.json`
+### 4. `railway.json`
 Cấu hình Railway sử dụng Nixpacks builder.
 
-## ⚙️ Cấu Hình Trên Railway Dashboard
+## ⚙️ Cấu Hình Trên Railway Dashboard (QUAN TRỌNG!)
 
-### Bước 1: Chọn Builder
+### Bước 1: Set Root Directory (BẮT BUỘC!)
 1. Vào Railway Dashboard → Project → Service
 2. **Settings** → **Service**
-3. **Builder**: Chọn **Nixpacks** ⭐
+3. **Root Directory**: `Backend` ⭐⭐⭐ (QUAN TRỌNG NHẤT!)
 4. Save
 
-### Bước 2: Kiểm tra Root Directory
+### Bước 2: Chọn Builder
 1. **Settings** → **Service**
-2. **Root Directory**: `Backend` ⭐ (Quan trọng!)
+2. **Builder**: Chọn **Nixpacks** ⭐
 3. Save
 
 ### Bước 3: Build Settings (Optional)
-Nixpacks sẽ tự động detect từ `nixpacks.toml`, nhưng có thể override:
-- **Build Command**: `npm install` (hoặc để mặc định)
-- **Start Command**: `npm start` (hoặc để mặc định)
+Nixpacks sẽ tự động detect từ `Backend/nixpacks.toml`:
+- **Build Command**: Để mặc định (hoặc `npm install`)
+- **Start Command**: Để mặc định (hoặc `npm start`)
 
 ## 🚀 Deploy
 
