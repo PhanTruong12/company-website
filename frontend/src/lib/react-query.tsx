@@ -1,6 +1,6 @@
 // react-query.tsx - React Query Provider Setup
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // Tạo QueryClient với config tối ưu cho SSR và cache
 const queryClient = new QueryClient({

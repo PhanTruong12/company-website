@@ -1,10 +1,11 @@
 // AdminGuard.tsx - Component bảo vệ các route admin
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { isAuthenticated } from '../../services/adminAuth.service';
 
 interface AdminGuardProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 /**
