@@ -1,53 +1,45 @@
-// auth.middleware.js - Middleware xác thực JWT cho Admin
+// auth.middleware.js - JWT Authentication Middleware for Admin
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const { UnauthorizedError, ForbiddenError } = require('../utils/errors/AppError');
+const { ERROR_MESSAGES, ROLES } = require('../constants');
+const { getEnv } = require('../config/env');
 
 /**
- * Middleware xác thực JWT token cho Admin
- * Kiểm tra token từ header Authorization: Bearer <token>
+ * Middleware to verify JWT token for Admin
+ * Checks token from Authorization header: Bearer <token>
  */
 const verifyAdminToken = async (req, res, next) => {
   try {
-    // Lấy token từ header
+    // Get token from header
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        message: 'Không có token xác thực. Vui lòng đăng nhập.'
-      });
+      throw new UnauthorizedError(ERROR_MESSAGES.AUTH_REQUIRED);
     }
 
-    const token = authHeader.substring(7); // Bỏ "Bearer " prefix
+    const token = authHeader.substring(7); // Remove "Bearer " prefix
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token không hợp lệ.'
-      });
+      throw new UnauthorizedError(ERROR_MESSAGES.INVALID_TOKEN);
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-production-secret-key');
+    const secret = getEnv('JWT_SECRET', 'your-production-secret-key');
+    const decoded = jwt.verify(token, secret);
 
-    // Kiểm tra admin có tồn tại không
+    // Check if admin exists
     const admin = await Admin.findById(decoded.id);
     if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Tài khoản không tồn tại.'
-      });
+      throw new UnauthorizedError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND);
     }
 
-    // Kiểm tra role phải là admin hoặc staff
-    if (admin.role !== 'admin' && admin.role !== 'staff') {
-      return res.status(403).json({
-        success: false,
-        message: 'Không có quyền truy cập.'
-      });
+    // Check role must be admin or staff
+    if (admin.role !== ROLES.ADMIN && admin.role !== ROLES.STAFF) {
+      throw new ForbiddenError(ERROR_MESSAGES.UNAUTHORIZED_ACCESS);
     }
 
-    // Gắn thông tin admin vào request để sử dụng ở các route tiếp theo
+    // Attach admin info to request for use in subsequent routes
     req.admin = {
       id: admin._id,
       email: admin.email,
@@ -56,23 +48,8 @@ const verifyAdminToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token không hợp lệ.'
-      });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        message: 'Token đã hết hạn. Vui lòng đăng nhập lại.'
-      });
-    }
-    
-    return res.status(500).json({
-      success: false,
-      message: 'Lỗi xác thực: ' + error.message
-    });
+    // JWT errors are handled by error handler middleware
+    next(error);
   }
 };
 

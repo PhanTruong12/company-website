@@ -1,115 +1,84 @@
-// adminAuth.controller.js - Controller cho Admin Authentication
+// adminAuth.controller.js - Admin Authentication Controller
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
+const { UnauthorizedError, ForbiddenError, NotFoundError } = require('../utils/errors/AppError');
+const { sendSuccess } = require('../utils/response');
+const { ERROR_MESSAGES, SUCCESS_MESSAGES, JWT, ROLES } = require('../constants');
+const { getEnv } = require('../config/env');
 
 /**
- * Tạo JWT token cho admin
+ * Generate JWT token for admin
  */
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'your-production-secret-key', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d' // Mặc định 7 ngày
-  });
+  const secret = getEnv('JWT_SECRET', 'your-production-secret-key');
+  const expiresIn = getEnv('JWT_EXPIRES_IN', JWT.DEFAULT_EXPIRES_IN);
+  
+  return jwt.sign({ id }, secret, { expiresIn });
 };
 
 /**
- * Đăng nhập Admin
+ * Admin Login
  * POST /api/admin/login
  * Body: { email, password }
  */
 const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng nhập đầy đủ email và mật khẩu.'
-      });
-    }
-
-    // Tìm admin theo email
-    const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
-    
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng.'
-      });
-    }
-
-    // Kiểm tra password
-    const isPasswordValid = await admin.comparePassword(password);
-    
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng.'
-      });
-    }
-
-    // Kiểm tra role phải là admin hoặc staff
-    if (admin.role !== 'admin' && admin.role !== 'staff') {
-      return res.status(403).json({
-        success: false,
-        message: 'Tài khoản không có quyền truy cập.'
-      });
-    }
-
-    // Tạo token
-    const token = generateToken(admin._id);
-
-    // Trả về thông tin admin (không bao gồm password)
-    res.json({
-      success: true,
-      message: 'Đăng nhập thành công.',
-      data: {
-        token,
-        admin: {
-          id: admin._id,
-          email: admin.email,
-          role: admin.role
-        }
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server: ' + error.message
-    });
+  // Validation
+  if (!email || !password) {
+    throw new UnauthorizedError(ERROR_MESSAGES.REQUIRED_FIELD('Email và mật khẩu'));
   }
+
+  // Find admin by email
+  const admin = await Admin.findOne({ email: email.toLowerCase().trim() });
+  
+  if (!admin) {
+    throw new UnauthorizedError(ERROR_MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  // Check password
+  const isPasswordValid = await admin.comparePassword(password);
+  
+  if (!isPasswordValid) {
+    throw new UnauthorizedError(ERROR_MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  // Check role must be admin or staff
+  if (admin.role !== ROLES.ADMIN && admin.role !== ROLES.STAFF) {
+    throw new ForbiddenError(ERROR_MESSAGES.UNAUTHORIZED_ACCESS);
+  }
+
+  // Generate token
+  const token = generateToken(admin._id);
+
+  // Return admin info (without password)
+  return sendSuccess(res, {
+    token,
+    admin: {
+      id: admin._id,
+      email: admin.email,
+      role: admin.role
+    }
+  }, SUCCESS_MESSAGES.LOGIN_SUCCESS);
 };
 
 /**
- * Lấy thông tin admin hiện tại (từ token)
+ * Get current admin info (from token)
  * GET /api/admin/me
  * Protected: verifyAdminToken
  */
 const getMe = async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.admin.id).select('-password');
-    
-    if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy tài khoản.'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        id: admin._id,
-        email: admin.email,
-        role: admin.role
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server: ' + error.message
-    });
+  const admin = await Admin.findById(req.admin.id).select('-password');
+  
+  if (!admin) {
+    throw new NotFoundError(ERROR_MESSAGES.ACCOUNT_NOT_FOUND);
   }
+
+  return sendSuccess(res, {
+    id: admin._id,
+    email: admin.email,
+    role: admin.role
+  });
 };
 
 module.exports = {
