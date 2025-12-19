@@ -14,7 +14,7 @@
     "create:env": "node scripts/create-env-files.js",
     "create:env:dev": "node scripts/create-env-files.js development",
     "create:env:prod": "node scripts/create-env-files.js production",
-    "start": "cross-env NODE_ENV=production node server.js",
+    "start": "node server.js",
     "dev": "cross-env NODE_ENV=development nodemon server.js",
     "dev:local": "cross-env NODE_ENV=development nodemon server.js",
     "prod:local": "cross-env NODE_ENV=production node server.js",
