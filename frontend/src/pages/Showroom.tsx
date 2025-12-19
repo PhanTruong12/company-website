@@ -9,6 +9,10 @@ import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import './Showroom.css';
 
+// Backend base URL để hiển thị ảnh (không có /api ở cuối)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
 const Showroom = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [images, setImages] = useState<InteriorImage[]>([]);
@@ -227,9 +231,13 @@ const Showroom = () => {
                 <div className="showroom-gallery">
                   {images.map((image) => (
                     <div key={image._id} className="gallery-item">
-                      <div className="gallery-image-wrapper">
-                        <img
-                          src={`http://localhost:5000${image.imageUrl}`}
+                  <div className="gallery-image-wrapper">
+                <img
+                          src={
+                            image.imageUrl.startsWith('http')
+                              ? image.imageUrl
+                              : `${BACKEND_BASE_URL}${image.imageUrl}`
+                          }
                           alt={image.name}
                           className="gallery-image"
                           loading="lazy"

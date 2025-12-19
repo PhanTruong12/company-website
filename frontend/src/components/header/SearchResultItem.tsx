@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import { type StoneSearchResult } from '../../services/search.service';
 import './SearchResultItem.css';
 
+// Backend base URL để hiển thị ảnh (không có /api ở cuối)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
 interface SearchResultItemProps {
   result: StoneSearchResult;
   onClick?: () => void;
@@ -11,7 +15,7 @@ interface SearchResultItemProps {
 export const SearchResultItem = ({ result, onClick }: SearchResultItemProps) => {
   const imageUrl = result.imageUrl.startsWith('http')
     ? result.imageUrl
-    : `http://localhost:5000${result.imageUrl}`;
+    : `${BACKEND_BASE_URL}${result.imageUrl}`;
 
   return (
     <Link
