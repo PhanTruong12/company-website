@@ -13,13 +13,13 @@ const usageItems: UsageItem[] = [
     id: 'kitchen',
     title: 'Nhà Bếp',
     description: 'Sản phẩm TND Granite luôn làm nổi bật không gian bếp của bạn với khả năng chống thấm, chống bám bẩn, độ bền cao và đa màu trang nhã ấn tượng',
-    image: '/collection.jpg',
+    image: '/collection2.jpg',
   },
   {
     id: 'staircase',
     title: 'Cầu Thang',
     description: 'Đá tự nhiên và nhân tạo tạo nên những bậc cầu thang sang trọng, bền đẹp theo thời gian với khả năng chống trơn trượt tốt',
-    image: '/collection2.jpg',
+    image: '/collection.jpg',
   },
   {
     id: 'bathroom',
