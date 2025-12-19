@@ -13,6 +13,10 @@ import { useStoneTypes } from '../../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../../constants/wallPositions';
 import './AdminImages.css';
 
+// Backend base URL để hiển thị ảnh (không có /api ở cuối)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
 const AdminImages = () => {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
@@ -75,7 +79,9 @@ const AdminImages = () => {
         description: image.description,
         image: null,
       });
-      setImagePreview(image.imageUrl.startsWith('http') ? image.imageUrl : `http://localhost:5000${image.imageUrl}`);
+      setImagePreview(
+        image.imageUrl.startsWith('http') ? image.imageUrl : `${BACKEND_BASE_URL}${image.imageUrl}`
+      );
     } else {
       setEditingImage(null);
       setFormData({
@@ -205,7 +211,7 @@ const AdminImages = () => {
                       src={
                         image.imageUrl.startsWith('http')
                           ? image.imageUrl
-                          : `http://localhost:5000${image.imageUrl}`
+                          : `${BACKEND_BASE_URL}${image.imageUrl}`
                       }
                       alt={image.name}
                       loading="lazy"
