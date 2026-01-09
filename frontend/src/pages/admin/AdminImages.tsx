@@ -11,11 +11,8 @@ import {
 import { logout } from '../../services/adminAuth.service';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../../constants/wallPositions';
+import { getImageUrl } from '../../utils/imageUrl';
 import './AdminImages.css';
-
-// Backend base URL để hiển thị ảnh (không có /api ở cuối)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const AdminImages = () => {
   const queryClient = useQueryClient();
@@ -79,9 +76,7 @@ const AdminImages = () => {
         description: image.description,
         image: null,
       });
-      setImagePreview(
-        image.imageUrl.startsWith('http') ? image.imageUrl : `${BACKEND_BASE_URL}${image.imageUrl}`
-      );
+      setImagePreview(getImageUrl(image.imageUrl));
     } else {
       setEditingImage(null);
       setFormData({
@@ -208,11 +203,7 @@ const AdminImages = () => {
                 <div key={image._id} className="admin-image-card">
                   <div className="admin-image-thumbnail">
                     <img
-                      src={
-                        image.imageUrl.startsWith('http')
-                          ? image.imageUrl
-                          : `${BACKEND_BASE_URL}${image.imageUrl}`
-                      }
+                      src={getImageUrl(image.imageUrl)}
                       alt={image.name}
                       loading="lazy"
                     />

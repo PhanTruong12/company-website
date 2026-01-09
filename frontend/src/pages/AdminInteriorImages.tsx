@@ -9,11 +9,8 @@ import {
 } from '../services/interiorImage.service';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
+import { getImageUrl } from '../utils/imageUrl';
 import './AdminInteriorImages.css';
-
-// Backend base URL để hiển thị ảnh (không có /api ở cuối)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const AdminInteriorImages = () => {
   const [images, setImages] = useState<InteriorImage[]>([]);
@@ -287,11 +284,7 @@ const AdminInteriorImages = () => {
               <div key={image._id} className="image-card">
                 <div className="image-thumbnail">
                   <img
-                    src={
-                      image.imageUrl.startsWith('http')
-                        ? image.imageUrl
-                        : `${BACKEND_BASE_URL}${image.imageUrl}`
-                    }
+                    src={getImageUrl(image.imageUrl)}
                     alt={image.name}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/placeholder.jpg';

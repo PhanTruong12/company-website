@@ -38,6 +38,15 @@ export const ShowroomDropdown = () => {
 
   const isLoading = isLoadingTypes || isLoadingPositions;
 
+  // Sắp xếp stoneTypes và wallPositions theo bảng chữ cái
+  const sortedStoneTypes = [...stoneTypes].sort((a, b) => 
+    a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true })
+  );
+  
+  const sortedWallPositions = [...wallPositions].sort((a, b) => 
+    a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true })
+  );
+
   return (
     <div className="showroom-dropdown" ref={dropdownRef}>
       <button
@@ -64,11 +73,11 @@ export const ShowroomDropdown = () => {
               {/* Stone Types Section */}
               <div className="dropdown-section">
                 <h3 className="dropdown-section-title">Loại Đá</h3>
-                {stoneTypes.length === 0 ? (
+                {sortedStoneTypes.length === 0 ? (
                   <div className="dropdown-empty">Chưa có dữ liệu loại đá</div>
                 ) : (
                   <ul className="dropdown-list">
-                    {stoneTypes.map((type) => (
+                    {sortedStoneTypes.map((type) => (
                       <li key={type._id}>
                         <Link
                           to={`/showroom?stoneType=${encodeURIComponent(type.name)}`}
@@ -90,7 +99,7 @@ export const ShowroomDropdown = () => {
               <div className="dropdown-section">
                 <h3 className="dropdown-section-title">Vị Trí Ốp</h3>
                 <ul className="dropdown-list">
-                  {wallPositions.map((position) => (
+                  {sortedWallPositions.map((position) => (
                     <li key={position._id}>
                       <Link
                         to={`/showroom?wallPosition=${encodeURIComponent(position.name)}`}

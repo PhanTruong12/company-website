@@ -7,11 +7,8 @@ import {
 } from '../services/interiorImage.service';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
+import { getImageUrl } from '../utils/imageUrl';
 import './Showroom.css';
-
-// Backend base URL để hiển thị ảnh (không có /api ở cuối)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 const Showroom = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,6 +25,9 @@ const Showroom = () => {
   // Đọc filter từ URL params - khởi tạo với giá trị từ URL
   const [selectedStoneType, setSelectedStoneType] = useState<string>('');
   const [selectedWallPosition, setSelectedWallPosition] = useState<string>('');
+  
+  // State cho sắp xếp: 'az' (A-Z), 'za' (Z-A), 'default' (mặc định)
+  const [sortOrder, setSortOrder] = useState<'az' | 'za' | 'default'>('az');
 
   const loadImages = useCallback(async (stoneType?: string, wallPosition?: string) => {
     setLoading(true);
@@ -142,6 +142,37 @@ const Showroom = () => {
     setSearchParams({}, { replace: true });
   };
 
+  // Hàm sắp xếp ảnh theo bảng chữ cái
+  const sortImages = (imagesToSort: InteriorImage[]): InteriorImage[] => {
+    if (sortOrder === 'default') {
+      return imagesToSort;
+    }
+
+    const sorted = [...imagesToSort].sort((a, b) => {
+      // Sử dụng localeCompare với locale 'vi' để sắp xếp đúng tiếng Việt
+      const comparison = a.name.localeCompare(b.name, 'vi', {
+        sensitivity: 'base',
+        numeric: true,
+      });
+      
+      return sortOrder === 'az' ? comparison : -comparison;
+    });
+
+    return sorted;
+  };
+
+  // Lấy danh sách ảnh đã được sắp xếp
+  const sortedImages = sortImages(images);
+
+  // Sắp xếp stoneTypes và wallPositions theo bảng chữ cái cho filter dropdowns
+  const sortedStoneTypes = [...stoneTypes].sort((a, b) => 
+    a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true })
+  );
+  
+  const sortedWallPositions = [...wallPositions].sort((a, b) => 
+    a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
+  );
+
   return (
     <div className="showroom">
       <div className="showroom-container">
@@ -165,7 +196,7 @@ const Showroom = () => {
               {isLoadingStoneTypes ? (
                 <option disabled>Đang tải...</option>
               ) : (
-                stoneTypes.map((type) => (
+                sortedStoneTypes.map((type) => (
                   <option key={type.name} value={type.name}>
                     {type.name}
                   </option>
@@ -182,11 +213,24 @@ const Showroom = () => {
               onChange={handleWallPositionChange}
             >
               <option value="">Tất cả</option>
-              {wallPositions.map((position) => (
+              {sortedWallPositions.map((position) => (
                 <option key={position} value={position}>
                   {position}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="sortOrder">Sắp xếp:</label>
+            <select
+              id="sortOrder"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'az' | 'za' | 'default')}
+            >
+              <option value="az">A - Z</option>
+              <option value="za">Z - A</option>
+              <option value="default">Mặc định</option>
             </select>
           </div>
 
@@ -226,18 +270,14 @@ const Showroom = () => {
             ) : (
               <>
                 <div className="showroom-count">
-                  Hiển thị {images.length} hình ảnh
+                  Hiển thị {sortedImages.length} hình ảnh
                 </div>
                 <div className="showroom-gallery">
-                  {images.map((image) => (
+                  {sortedImages.map((image) => (
                     <div key={image._id} className="gallery-item">
                   <div className="gallery-image-wrapper">
                 <img
-                          src={
-                            image.imageUrl.startsWith('http')
-                              ? image.imageUrl
-                              : `${BACKEND_BASE_URL}${image.imageUrl}`
-                          }
+                          src={getImageUrl(image.imageUrl)}
                           alt={image.name}
                           className="gallery-image"
                           loading="lazy"

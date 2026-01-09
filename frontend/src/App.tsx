@@ -49,7 +49,6 @@ const AppContent = () => {
           <Route path="/collection/:collectionId" element={<CollectionRedirect />} />
           <Route path="/showroom" element={<Showroom />} />
           <Route path="/showroom/:slug" element={<ShowroomDetail />} />
-          
           {/* Old admin route - Redirect to new route with authentication */}
           <Route
             path="/admin/interior-images"
