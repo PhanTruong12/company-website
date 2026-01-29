@@ -1,45 +1,43 @@
-// interiorImageRoutes.js - Routes cho InteriorImage API
+// features/images/routes/image.routes.js - Public image routes
 const express = require('express');
 const router = express.Router();
-// Sử dụng uploadMiddleware để tự động chọn Cloudinary hoặc local storage
-const upload = require('../middleware/uploadMiddleware');
+const upload = require('../../../core/middleware/uploadMiddleware');
 const {
   createInteriorImage,
   getInteriorImages,
   getInteriorImageById,
   updateInteriorImage,
   deleteInteriorImage
-} = require('../controllers/interiorImageController');
+} = require('../controllers/image.controller');
 
 /**
  * POST /api/interior-images
- * Thêm hình ảnh mới (multipart/form-data)
+ * Create new image
  */
 router.post('/', upload.single('image'), createInteriorImage);
 
 /**
  * GET /api/interior-images
- * Lấy danh sách hình ảnh (có thể filter theo stoneType, wallPosition)
+ * Get all images (with optional filters)
  */
 router.get('/', getInteriorImages);
 
 /**
  * GET /api/interior-images/:id
- * Lấy chi tiết 1 hình ảnh
+ * Get image by ID
  */
 router.get('/:id', getInteriorImageById);
 
 /**
  * PUT /api/interior-images/:id
- * Cập nhật thông tin + ảnh (ảnh là optional)
+ * Update image
  */
 router.put('/:id', upload.single('image'), updateInteriorImage);
 
 /**
  * DELETE /api/interior-images/:id
- * Xóa hình ảnh + file ảnh trong server
+ * Delete image
  */
 router.delete('/:id', deleteInteriorImage);
 
 module.exports = router;
-

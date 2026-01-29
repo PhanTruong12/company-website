@@ -22,7 +22,8 @@
     "migrate:atlas": "node scripts/migrate-to-atlas.js",
     "migrate:cloudinary": "node src/utils/migrateToCloudinary.js",
     "migrate:cloudinary:dry": "node src/utils/migrateToCloudinary.js --dry-run",
-    "generate:jwt-secret": "node src/utils/generateJWTSecret.js"
+    "generate:jwt-secret": "node src/utils/generateJWTSecret.js",
+    "upload:reference": "node scripts/upload-reference-images.js"
   },
   "keywords": [],
   "author": "",

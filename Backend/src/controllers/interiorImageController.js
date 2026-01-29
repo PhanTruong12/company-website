@@ -2,6 +2,7 @@
 const InteriorImage = require('../models/InteriorImage');
 const fs = require('fs');
 const path = require('path');
+const { getImageUrl } = require('../utils/fileHelper');
 
 /**
  * Tạo hình ảnh mới
@@ -26,8 +27,8 @@ const createInteriorImage = async (req, res) => {
       });
     }
 
-    // Tạo đường dẫn ảnh
-    const imageUrl = `/uploads/interior-images/${req.file.filename}`;
+    // Tạo đường dẫn ảnh (tự động xử lý Cloudinary hoặc local storage)
+    const imageUrl = getImageUrl(req.file);
 
     // Tạo document mới
     const interiorImage = new InteriorImage({
@@ -168,8 +169,8 @@ const updateInteriorImage = async (req, res) => {
         fs.unlinkSync(oldImagePath);
       }
 
-      // Cập nhật đường dẫn ảnh mới
-      image.imageUrl = `/uploads/interior-images/${req.file.filename}`;
+      // Cập nhật đường dẫn ảnh mới (tự động xử lý Cloudinary hoặc local storage)
+      image.imageUrl = getImageUrl(req.file);
     }
 
     await image.save();

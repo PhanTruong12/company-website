@@ -46,11 +46,11 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
-app.use('/api/interior-images', require('./src/routes/interiorImageRoutes'));
+app.use('/api/interior-images', require('./src/features/images/routes/image.routes'));
 app.use('/api/stone-types', require('./src/routes/stoneTypeRoutes'));
 app.use('/api/wall-positions', require('./src/routes/wallPositionRoutes'));
 app.use('/api/search', require('./src/routes/searchRoutes'));
-app.use('/api/admin', require('./src/routes/admin.routes'));
+app.use('/api/admin', require('./src/features/admin/routes'));
 
 // ==================== Error Handling ====================
 // 404 handler (must be after all routes)
