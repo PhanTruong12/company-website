@@ -10,6 +10,7 @@ import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
+import { publicAsset } from '../utils/publicAsset';
 import './AdminInteriorImages.css';
 
 const AdminInteriorImages = () => {
@@ -287,7 +288,7 @@ const AdminInteriorImages = () => {
                     src={getImageUrl(image.imageUrl)}
                     alt={image.name}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                      (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
                     }}
                   />
                 </div>

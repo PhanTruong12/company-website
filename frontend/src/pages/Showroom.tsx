@@ -6,6 +6,7 @@ import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
+import { publicAsset } from '../utils/publicAsset';
 import './Showroom.css';
 
 const Showroom = () => {
@@ -306,7 +307,7 @@ const Showroom = () => {
                           className="gallery-image"
                           loading="lazy"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                            (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
                           }}
                         />
                         <div className="gallery-overlay">
@@ -351,7 +352,7 @@ const Showroom = () => {
                 alt={selectedImage.name}
                 className="image-modal-image"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                  (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
                 }}
               />
               <div className="image-modal-info">

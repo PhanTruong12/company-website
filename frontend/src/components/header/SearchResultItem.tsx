@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import type { StoneSearchResult } from '../../features/search/api';
 import { getImageUrl } from '../../utils/imageUrl';
+import { publicAsset } from '../../utils/publicAsset';
 import './SearchResultItem.css';
 
 interface SearchResultItemProps {
@@ -23,7 +24,7 @@ export const SearchResultItem = ({ result, onClick }: SearchResultItemProps) => 
           src={imageUrl}
           alt={result.name}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.jpg';
+            (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
           }}
         />
       </div>
