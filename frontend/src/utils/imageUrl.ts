@@ -2,22 +2,11 @@
 // Hỗ trợ cả Cloudinary URL và local storage URL
 
 // Lấy API base URL từ environment variable
-// Nếu không có, tự động detect dựa trên current location
 const getApiBaseUrl = (): string => {
-  // Ưu tiên environment variable
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
-  
-  // Tự động detect trong production (chỉ khi chạy trong browser)
-  if (import.meta.env.PROD && typeof window !== 'undefined') {
-    // Nếu đang chạy trên production, dùng cùng origin
-    const origin = window.location.origin;
-    // Giả sử backend chạy trên cùng domain hoặc subdomain
-    // Có thể override bằng cách set VITE_API_BASE_URL
-    return `${origin}/api`;
-  }
-  
+
   // Development default
   return 'http://localhost:5000/api';
 };
@@ -50,24 +39,28 @@ export const getImageUrl = (imageUrl: string | undefined | null): string => {
     return imageUrl;
   }
 
-  // Nếu là relative path, thêm backend base URL
-  // Đảm bảo không có double slash
-  const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-  const baseUrl = BACKEND_BASE_URL.endsWith('/') 
-    ? BACKEND_BASE_URL.slice(0, -1) 
-    : BACKEND_BASE_URL;
-  
-  const fullUrl = `${baseUrl}${cleanPath}`;
-  
-  if (DEBUG) {
-    console.log('[getImageUrl] Constructed URL:', {
-      original: imageUrl,
-      backendBase: BACKEND_BASE_URL,
-      final: fullUrl
-    });
+  // Chỉ prepend backend base URL trong development
+  // Và chỉ khi imageUrl là relative path bắt đầu bằng "/"
+  if (import.meta.env.DEV && imageUrl.startsWith('/')) {
+    const baseUrl = BACKEND_BASE_URL.endsWith('/')
+      ? BACKEND_BASE_URL.slice(0, -1)
+      : BACKEND_BASE_URL;
+
+    const fullUrl = `${baseUrl}${imageUrl}`;
+
+    if (DEBUG) {
+      console.log('[getImageUrl] Constructed URL:', {
+        original: imageUrl,
+        backendBase: BACKEND_BASE_URL,
+        final: fullUrl
+      });
+    }
+
+    return fullUrl;
   }
-  
-  return fullUrl;
+
+  // Production: dùng nguyên URL backend trả về
+  return imageUrl;
 };
 
 /**

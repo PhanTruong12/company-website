@@ -1,7 +1,8 @@
 // AdminLogin.tsx - Trang đăng nhập Admin
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { login, isAuthenticated } from '../../services/adminAuth.service';
+import { login } from '../../features/admin/api';
+import { authService } from '../../features/admin/lib/auth';
 import './AdminLogin.css';
 
 const AdminLogin = () => {
@@ -14,7 +15,7 @@ const AdminLogin = () => {
 
   // Nếu đã đăng nhập, redirect về trang quản lý
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (authService.isAuthenticated()) {
       const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/internal/admin/images';
       navigate(from, { replace: true });
     }
@@ -27,6 +28,7 @@ const AdminLogin = () => {
 
     try {
       const result = await login(email, password);
+      authService.login(result.token);
       console.log('Login success:', result);
       // Đăng nhập thành công, redirect về trang quản lý hoặc trang trước đó
       const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/internal/admin/images';

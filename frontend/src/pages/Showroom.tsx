@@ -1,10 +1,8 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  getInteriorImages,
-  type InteriorImage,
-} from '../services/interiorImage.service';
+import { getInteriorImages } from '../features/showroom/api';
+import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
@@ -15,6 +13,7 @@ const Showroom = () => {
   const [images, setImages] = useState<InteriorImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<InteriorImage | null>(null);
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -173,6 +172,25 @@ const Showroom = () => {
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
 
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
+
+  useEffect(() => {
+    if (!selectedImage) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedImage(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage]);
+
   return (
     <div className="showroom">
       <div className="showroom-container">
@@ -274,9 +292,15 @@ const Showroom = () => {
                 </div>
                 <div className="showroom-gallery">
                   {sortedImages.map((image) => (
-                    <div key={image._id} className="gallery-item">
-                  <div className="gallery-image-wrapper">
-                <img
+                    <button
+                      key={image._id}
+                      type="button"
+                      className="gallery-item"
+                      onClick={() => setSelectedImage(image)}
+                      aria-label={`Xem chi tiết ${image.name}`}
+                    >
+                      <div className="gallery-image-wrapper">
+                        <img
                           src={getImageUrl(image.imageUrl)}
                           alt={image.name}
                           className="gallery-image"
@@ -298,12 +322,50 @@ const Showroom = () => {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </>
             )}
           </>
+        )}
+        {selectedImage && (
+          <div
+            className="image-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Xem ảnh ${selectedImage.name}`}
+            onClick={closeImageModal}
+          >
+            <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="image-modal-close"
+                onClick={closeImageModal}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+              <img
+                src={getImageUrl(selectedImage.imageUrl)}
+                alt={selectedImage.name}
+                className="image-modal-image"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.jpg';
+                }}
+              />
+              <div className="image-modal-info">
+                <h3 className="image-modal-title">{selectedImage.name}</h3>
+                <div className="image-modal-meta">
+                  <span className="image-modal-tag">{selectedImage.stoneType}</span>
+                  <span className="image-modal-tag">{selectedImage.wallPosition}</span>
+                </div>
+                {selectedImage.description && (
+                  <p className="image-modal-description">{selectedImage.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -1,12 +1,12 @@
 // AdminInteriorImages.tsx - Trang Admin quản lý hình ảnh nội thất
 import { useState, useEffect } from 'react';
 import {
-  getInteriorImages,
-  createInteriorImage,
-  updateInteriorImage,
-  deleteInteriorImage,
-  type InteriorImage,
-} from '../services/interiorImage.service';
+  getImages,
+  createImage,
+  updateImage,
+  deleteImage,
+} from '../features/admin/api';
+import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
@@ -42,8 +42,8 @@ const AdminInteriorImages = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getInteriorImages();
-      setImages(data);
+      const result = await getImages();
+      setImages(result.images);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
@@ -107,9 +107,9 @@ const AdminInteriorImages = () => {
       }
 
       if (editingId) {
-        await updateInteriorImage(editingId, submitFormData);
+        await updateImage(editingId, submitFormData);
       } else {
-        await createInteriorImage(submitFormData);
+        await createImage(submitFormData);
       }
 
       resetForm();
@@ -144,7 +144,7 @@ const AdminInteriorImages = () => {
     setError(null);
 
     try {
-      await deleteInteriorImage(id);
+      await deleteImage(id);
       loadImages();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');

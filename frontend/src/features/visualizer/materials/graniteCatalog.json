@@ -1,0 +1,42 @@
+[
+  {
+    "id": "granite-001",
+    "name": "Carrara White",
+    "thumb": "/images/granite/carrara-white-thumb.jpg",
+    "albedo": "/images/granite/carrara-white-albedo.jpg",
+    "roughness": 0.3,
+    "scale": 1.0
+  },
+  {
+    "id": "granite-002",
+    "name": "Calacatta Gold",
+    "thumb": "/images/granite/calacatta-gold-thumb.jpg",
+    "albedo": "/images/granite/calacatta-gold-albedo.jpg",
+    "roughness": 0.25,
+    "scale": 1.2
+  },
+  {
+    "id": "granite-003",
+    "name": "Nero Marquina",
+    "thumb": "/images/granite/nero-marquina-thumb.jpg",
+    "albedo": "/images/granite/nero-marquina-albedo.jpg",
+    "roughness": 0.4,
+    "scale": 0.8
+  },
+  {
+    "id": "granite-004",
+    "name": "Bianco Venatino",
+    "thumb": "/images/granite/bianco-venatino-thumb.jpg",
+    "albedo": "/images/granite/bianco-venatino-albedo.jpg",
+    "roughness": 0.35,
+    "scale": 1.1
+  },
+  {
+    "id": "granite-005",
+    "name": "Emperador Dark",
+    "thumb": "/images/granite/emperador-dark-thumb.jpg",
+    "albedo": "/images/granite/emperador-dark-albedo.jpg",
+    "roughness": 0.3,
+    "scale": 1.0
+  }
+]

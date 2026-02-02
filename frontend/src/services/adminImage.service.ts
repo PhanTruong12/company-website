@@ -16,17 +16,20 @@ export interface InteriorImage {
   updatedAt: string;
 }
 
+// Interface cho Pagination
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 // Interface cho API Response
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data?: T;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination?: Pagination;
 }
 
 /**
@@ -70,7 +73,7 @@ export const getImages = async (
   wallPosition?: string,
   page: number = 1,
   limit: number = 50
-): Promise<{ images: InteriorImage[]; pagination: any }> => {
+): Promise<{ images: InteriorImage[]; pagination: Pagination }> => {
   try {
     const params: Record<string, string | number> = {
       page,
@@ -91,7 +94,7 @@ export const getImages = async (
           limit: 50,
           total: response.data.data.length,
           totalPages: 1,
-        } as { page: number; limit: number; total: number; totalPages: number },
+        } as Pagination,
       };
     }
     throw new Error(response.data.message || 'Lỗi khi lấy danh sách hình ảnh');

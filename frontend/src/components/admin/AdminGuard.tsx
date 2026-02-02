@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { isAuthenticated } from '../../services/adminAuth.service';
+import { authService } from '../../features/admin/lib/auth';
 
 interface AdminGuardProps {
   children: ReactNode;
@@ -20,7 +20,7 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   useEffect(() => {
     // Kiểm tra authentication
     const checkAuth = () => {
-      const authenticated = isAuthenticated();
+      const authenticated = authService.isAuthenticated();
       setIsAuth(authenticated);
       setIsChecking(false);
     };

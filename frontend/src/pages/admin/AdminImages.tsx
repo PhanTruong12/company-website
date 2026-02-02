@@ -6,9 +6,9 @@ import {
   createImage,
   updateImage,
   deleteImage,
-  type InteriorImage,
-} from '../../services/adminImage.service';
-import { logout } from '../../services/adminAuth.service';
+} from '../../features/admin/api';
+import { authService } from '../../features/admin/lib/auth';
+import type { InteriorImage } from '../../shared/types';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../../constants/wallPositions';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -162,7 +162,7 @@ const AdminImages = () => {
   };
 
   const handleLogout = () => {
-    logout();
+    authService.logout();
     window.location.href = '/internal/admin/login';
   };
 

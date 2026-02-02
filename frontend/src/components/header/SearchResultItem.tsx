@@ -1,6 +1,6 @@
 // SearchResultItem.tsx - Component hiển thị một item trong kết quả search
 import { Link } from 'react-router-dom';
-import { type StoneSearchResult } from '../../services/search.service';
+import type { StoneSearchResult } from '../../features/search/api';
 import { getImageUrl } from '../../utils/imageUrl';
 import './SearchResultItem.css';
 
