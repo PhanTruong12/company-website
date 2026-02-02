@@ -1,5 +1,6 @@
 // Logo.tsx - Component Logo TND Granite
 import './Logo.css';
+import { publicAsset } from '../utils/publicAsset';
 
 interface LogoProps {
   /**
@@ -46,7 +47,7 @@ export const Logo = ({
     <div className={logoClasses}>
       <div className="tnd-logo-container">
         <img
-          src="/logo.jpg"
+          src={publicAsset('logo.jpg')}
           alt="TND Granite Logo"
           className="tnd-logo-image"
           loading="lazy"

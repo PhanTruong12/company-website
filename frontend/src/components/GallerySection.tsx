@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
+import { publicAsset } from '../utils/publicAsset';
 
 const galleryItems = [
-  { img: '/gallery1.jpg', alt: 'Mẫu đá 1' },
-  { img: '/gallery2.jpg', alt: 'Mẫu đá 2' },
-  { img: '/gallery3.jpg', alt: 'Mẫu đá 3' },
+  { img: publicAsset('gallery1.jpg'), alt: 'Mẫu đá 1' },
+  { img: publicAsset('gallery2.jpg'), alt: 'Mẫu đá 2' },
+  { img: publicAsset('gallery3.jpg'), alt: 'Mẫu đá 3' },
 ];
 
 const GallerySection = () => {

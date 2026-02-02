@@ -1,5 +1,6 @@
 // UsageSection.tsx - Component hiển thị các công năng sử dụng đá
 import './UsageSection.css';
+import { publicAsset } from '../utils/publicAsset';
 
 interface UsageItem {
   id: string;
@@ -13,25 +14,25 @@ const usageItems: UsageItem[] = [
     id: 'kitchen',
     title: 'Nhà Bếp',
     description: 'Sản phẩm TND Granite luôn làm nổi bật không gian bếp của bạn với khả năng chống thấm, chống bám bẩn, độ bền cao và đa màu trang nhã ấn tượng',
-    image: '/collection2.jpg',
+    image: publicAsset('collection2.jpg'),
   },
   {
     id: 'staircase',
     title: 'Cầu Thang',
     description: 'Đá tự nhiên và nhân tạo tạo nên những bậc cầu thang sang trọng, bền đẹp theo thời gian với khả năng chống trơn trượt tốt',
-    image: '/collection.jpg',
+    image: publicAsset('collection.jpg'),
   },
   {
     id: 'bathroom',
     title: 'Phòng Tắm',
     description: 'TND Granite cung cấp phổ thiết kế với màu sắc tinh tế, phù hợp với phong cách từ cổ điển đến hiện đại. Đặc tính chống thấm, dễ bảo dưỡng của đá nhân tạo thạch anh là sự lựa chọn tối ưu cho phòng tắm của bạn',
-    image: '/collection3.jpg',
+    image: publicAsset('collection3.jpg'),
   },
   {
     id: 'facade',
     title: 'Mặt Tiền',
     description: 'TND Granite luôn cung cấp các loại đá có độ bền cao, khả năng chịu mài mòn tốt, là vật liệu thích hợp nhất cho mọi công trình thương mại',
-    image: '/collection.jpg',
+    image: publicAsset('collection.jpg'),
   },
 ];
 

@@ -1,6 +1,8 @@
 // imageUrl.ts - Utility để xử lý URL ảnh từ backend
 // Hỗ trợ cả Cloudinary URL và local storage URL
 
+import { publicAsset } from './publicAsset';
+
 // Lấy API base URL từ environment variable
 const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
@@ -28,7 +30,7 @@ export const getImageUrl = (imageUrl: string | undefined | null): string => {
     if (DEBUG) {
       console.warn('[getImageUrl] No imageUrl provided, using placeholder');
     }
-    return '/placeholder.jpg';
+    return publicAsset('placeholder.jpg');
   }
 
   // Nếu đã là full URL (Cloudinary hoặc external), trả về trực tiếp

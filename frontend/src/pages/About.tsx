@@ -1,5 +1,6 @@
 // About.tsx - Trang Giới thiệu công ty
 import './About.css';
+import { publicAsset } from '../utils/publicAsset';
 
 const About = () => {
   return (
@@ -10,7 +11,7 @@ const About = () => {
           <h1 className="about-h1">Giới thiệu Công Ty TNHH TM & TK Tường Nhà Đẹp</h1>
           <div className="about-hero-image">
             <img 
-              src="/collection.jpg" 
+              src={publicAsset('collection.jpg')} 
               alt="Công trình ốp đá thực tế - Showroom đá nội thất" 
               loading="lazy"
             />
@@ -37,11 +38,11 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src="/collection2.jpg" 
+                src={publicAsset('collection2.jpg')} 
                 alt="Đội ngũ thi công chuyên nghiệp - Công trình hoàn thiện" 
                 loading="lazy"
               />
-              <p className="image-caption">[Hình minh họa: Đội ngũ thi công hoặc công trình hoàn thiện]</p>
+              <p className="image-caption">[Hình minh họa: Công trình hoàn thiện]</p>
             </div>
           </div>
         </section>
@@ -66,7 +67,7 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src="/collection3.jpg" 
+                src={publicAsset('collection3.jpg')} 
                 alt="Quy trình thi công và lắp đặt đá ốp lát" 
                 loading="lazy"
               />
@@ -83,7 +84,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src="/collection.jpg" 
+                  src={publicAsset('collection.jpg')} 
                   alt="Đá Granite - Bền bỉ và sang trọng" 
                   loading="lazy"
                 />
@@ -100,7 +101,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src="/collection2.jpg" 
+                  src={publicAsset('collection2.jpg')} 
                   alt="Đá Marble - Tinh tế và đẳng cấp" 
                   loading="lazy"
                 />
@@ -117,7 +118,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src="/collection3.jpg" 
+                  src={publicAsset('collection3.jpg')} 
                   alt="Đá Nung Kết - Xu hướng vật liệu hiện đại" 
                   loading="lazy"
                 />
@@ -134,7 +135,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src="/collection.jpg" 
+                  src={publicAsset('collection.jpg')} 
                   alt="Đá Thạch Anh - Thẩm mỹ và độ bền vượt trội" 
                   loading="lazy"
                 />
@@ -170,7 +171,7 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src="/collection2.jpg" 
+                src={publicAsset('collection2.jpg')} 
                 alt="Công trình hoàn thiện tổng thể - Thi công đá ốp lát" 
                 loading="lazy"
               />
