@@ -1,91 +1,50 @@
 // AdminImages.tsx - Trang quản lý hình ảnh Admin
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getImages,
-  createImage,
-  updateImage,
-  deleteImage,
-} from '../../features/admin/api';
 import { authService } from '../../features/admin/lib/auth';
 import type { InteriorImage } from '../../shared/types';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../../constants/wallPositions';
 import { getImageUrl } from '../../utils/imageUrl';
+import { buildImageFormData } from '../../utils/imageForm';
+import { useImageForm } from '../../hooks/useImageForm';
+import { useAdminImagesCrud } from '../../hooks/useAdminImagesCrud';
 import './AdminImages.css';
 
 const AdminImages = () => {
-  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingImage, setEditingImage] = useState<InteriorImage | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    stoneType: '',
-    wallPosition: '',
-    description: '',
-    image: null as File | null,
-  });
+  const {
+    formData,
+    resetForm,
+    setFromImage,
+    handleInputChange,
+    handleFileChange,
+    toggleWallPosition,
+  } = useImageForm();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: stoneTypes = [] } = useStoneTypes();
 
-  // Query để lấy danh sách images
   const {
-    data: imagesData,
+    images,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['admin-images'],
-    queryFn: () => getImages(),
-  });
-
-  // Mutation để tạo image
-  const createMutation = useMutation({
-    mutationFn: (formData: FormData) => createImage(formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-images'] });
-      handleCloseModal();
-    },
-  });
-
-  // Mutation để cập nhật image
-  const updateMutation = useMutation({
-    mutationFn: ({ id, formData }: { id: string; formData: FormData }) =>
-      updateImage(id, formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-images'] });
-      handleCloseModal();
-    },
-  });
-
-  // Mutation để xóa image
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteImage(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-images'] });
-    },
-  });
+    createImage: createImageAsync,
+    updateImage: updateImageAsync,
+    deleteImage: deleteImageAsync,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useAdminImagesCrud();
 
   const handleOpenModal = (image?: InteriorImage) => {
     if (image) {
       setEditingImage(image);
-      setFormData({
-        name: image.name,
-        stoneType: image.stoneType,
-        wallPosition: image.wallPosition,
-        description: image.description,
-        image: null,
-      });
+      setFromImage(image);
       setImagePreview(getImageUrl(image.imageUrl));
     } else {
       setEditingImage(null);
-      setFormData({
-        name: '',
-        stoneType: '',
-        wallPosition: '',
-        description: '',
-        image: null,
-      });
+      resetForm();
       setImagePreview(null);
     }
     setShowModal(true);
@@ -94,56 +53,26 @@ const AdminImages = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingImage(null);
-    setFormData({
-      name: '',
-      stoneType: '',
-      wallPosition: '',
-      description: '',
-      image: null,
-    });
+    resetForm();
     setImagePreview(null);
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData((prev) => ({ ...prev, image: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    handleFileChange(e, (previewUrl) => setImagePreview(previewUrl));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const submitFormData = new FormData();
-    submitFormData.append('name', formData.name);
-    submitFormData.append('stoneType', formData.stoneType);
-    submitFormData.append('wallPosition', formData.wallPosition);
-    submitFormData.append('description', formData.description);
-    if (formData.image) {
-      submitFormData.append('image', formData.image);
-    }
+    const submitFormData = buildImageFormData(formData);
 
     try {
       if (editingImage) {
-        await updateMutation.mutateAsync({
-          id: editingImage._id,
-          formData: submitFormData,
-        });
+        await updateImageAsync(editingImage._id, submitFormData);
       } else {
-        await createMutation.mutateAsync(submitFormData);
+        await createImageAsync(submitFormData);
       }
+      handleCloseModal();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     }
@@ -155,7 +84,7 @@ const AdminImages = () => {
     }
 
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteImageAsync(id);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     }
@@ -166,7 +95,7 @@ const AdminImages = () => {
     window.location.href = '/internal/admin/login';
   };
 
-  const images = imagesData?.images || [];
+  const errorMessage = error instanceof Error ? error.message : null;
 
   return (
     <div className="admin-images-container">
@@ -183,9 +112,9 @@ const AdminImages = () => {
       </div>
 
       {isLoading && <div className="admin-loading">Đang tải...</div>}
-      {error && (
+      {errorMessage && (
         <div className="admin-error">
-          Lỗi: {error instanceof Error ? error.message : 'Không thể tải dữ liệu'}
+          Lỗi: {errorMessage}
         </div>
       )}
 
@@ -221,7 +150,11 @@ const AdminImages = () => {
                     <h3 className="admin-image-title">{image.name}</h3>
                     <div className="admin-image-badges">
                       <span className="badge badge-stone">{image.stoneType}</span>
-                      <span className="badge badge-position">{image.wallPosition}</span>
+                      <span className="badge badge-position">
+                        {Array.isArray(image.wallPosition)
+                          ? image.wallPosition.join(', ')
+                          : image.wallPosition}
+                      </span>
                     </div>
                     {image.description && (
                       <p className="admin-image-description">{image.description}</p>
@@ -239,11 +172,11 @@ const AdminImages = () => {
                     <button
                       onClick={() => handleDelete(image._id)}
                       className="btn-delete"
-                      disabled={deleteMutation.isPending}
+                      disabled={isDeleting}
                       title="Xóa hình ảnh"
                     >
                       <span className="btn-icon">🗑️</span>
-                      <span>{deleteMutation.isPending ? 'Đang xóa...' : 'Xóa'}</span>
+                      <span>{isDeleting ? 'Đang xóa...' : 'Xóa'}</span>
                     </button>
                   </div>
                 </div>
@@ -295,19 +228,27 @@ const AdminImages = () => {
 
               <div className="admin-form-field">
                 <label>Vị trí ốp *</label>
-                <select
-                  name="wallPosition"
-                  value={formData.wallPosition}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">-- Chọn vị trí --</option>
-                  {WALL_POSITIONS.map((position) => (
-                    <option key={position} value={position}>
-                      {position}
-                    </option>
-                  ))}
-                </select>
+                <div className="multi-select">
+                  {WALL_POSITIONS.map((position) => {
+                    const selected = formData.wallPosition.includes(position);
+                    return (
+                      <label
+                        key={position}
+                        className={`multi-option ${selected ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          name="wallPosition"
+                          value={position}
+                          checked={selected}
+                          onChange={() => toggleWallPosition(position)}
+                        />
+                        <span>{position}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <small className="form-hint">Chọn một hoặc nhiều vị trí phù hợp</small>
               </div>
 
               <div className="admin-form-field">
@@ -347,11 +288,11 @@ const AdminImages = () => {
                   type="submit"
                   className="btn-primary"
                   disabled={
-                    createMutation.isPending ||
-                    updateMutation.isPending
+                    isCreating ||
+                    isUpdating
                   }
                 >
-                  {createMutation.isPending || updateMutation.isPending
+                  {isCreating || isUpdating
                     ? 'Đang lưu...'
                     : editingImage
                     ? 'Cập Nhật'

@@ -1,32 +1,28 @@
 // AdminInteriorImages.tsx - Trang Admin quản lý hình ảnh nội thất
-import { useState, useEffect } from 'react';
-import {
-  getImages,
-  createImage,
-  updateImage,
-  deleteImage,
-} from '../features/admin/api';
+import { useState } from 'react';
 import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
 import { publicAsset } from '../utils/publicAsset';
+import { buildImageFormData } from '../utils/imageForm';
+import { useImageForm } from '../hooks/useImageForm';
+import { useAdminImagesCrud } from '../hooks/useAdminImagesCrud';
 import './AdminInteriorImages.css';
 
 const AdminInteriorImages = () => {
-  const [images, setImages] = useState<InteriorImage[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    stoneType: '',
-    wallPosition: '',
-    description: '',
-    image: null as File | null,
-  });
+  const {
+    formData,
+    resetForm,
+    setFromImage,
+    handleInputChange,
+    handleFileChange: handleFileInputChange,
+    toggleWallPosition,
+  } = useImageForm();
 
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -34,49 +30,27 @@ const AdminInteriorImages = () => {
   const stoneTypes = stoneTypesData;
   const wallPositions = WALL_POSITIONS;
 
-  // Load danh sách hình ảnh
-  useEffect(() => {
-    loadImages();
-  }, []);
-
-  const loadImages = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getImages();
-      setImages(result.images);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    images,
+    isLoading,
+    error: queryError,
+    createImage: createImageAsync,
+    updateImage: updateImageAsync,
+    deleteImage: deleteImageAsync,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useAdminImagesCrud();
 
   // Reset form
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      stoneType: '',
-      wallPosition: '',
-      description: '',
-      image: null,
-    });
+  const handleResetForm = () => {
+    resetForm();
     setEditingId(null);
-  };
-
-  // Handle input change
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Handle file change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({ ...prev, image: e.target.files![0] }));
-    }
+    handleFileInputChange(e);
   };
 
   // Handle submit
@@ -85,7 +59,7 @@ const AdminInteriorImages = () => {
     setError(null);
 
     // Validate
-    if (!formData.name || !formData.stoneType || !formData.wallPosition) {
+    if (!formData.name || !formData.stoneType || formData.wallPosition.length === 0) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
@@ -95,42 +69,24 @@ const AdminInteriorImages = () => {
       return;
     }
 
-    setLoading(true);
-
     try {
-      const submitFormData = new FormData();
-      submitFormData.append('name', formData.name);
-      submitFormData.append('stoneType', formData.stoneType);
-      submitFormData.append('wallPosition', formData.wallPosition);
-      submitFormData.append('description', formData.description);
-      if (formData.image) {
-        submitFormData.append('image', formData.image);
-      }
+      const submitFormData = buildImageFormData(formData);
 
       if (editingId) {
-        await updateImage(editingId, submitFormData);
+        await updateImageAsync(editingId, submitFormData);
       } else {
-        await createImage(submitFormData);
+        await createImageAsync(submitFormData);
       }
 
-      resetForm();
-      loadImages();
+      handleResetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setLoading(false);
     }
   };
 
   // Handle edit
   const handleEdit = (image: InteriorImage) => {
-    setFormData({
-      name: image.name,
-      stoneType: image.stoneType,
-      wallPosition: image.wallPosition,
-      description: image.description,
-      image: null,
-    });
+    setFromImage(image);
     setEditingId(image._id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -141,18 +97,15 @@ const AdminInteriorImages = () => {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
-      await deleteImage(id);
-      loadImages();
+      await deleteImageAsync(id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-    } finally {
-      setLoading(false);
     }
   };
+
+  const queryErrorMessage =
+    queryError instanceof Error ? queryError.message : null;
 
   return (
     <div className="admin-interior-images">
@@ -165,7 +118,11 @@ const AdminInteriorImages = () => {
             {editingId ? 'Sửa Hình Ảnh' : 'Thêm Hình Ảnh Mới'}
           </h2>
 
-          {error && <div className="error-message">{error}</div>}
+        {(error || queryErrorMessage) && (
+          <div className="error-message">
+            {error || queryErrorMessage || 'Có lỗi xảy ra'}
+          </div>
+        )}
 
           <form onSubmit={handleSubmit} className="admin-form">
             <div className="form-group">
@@ -204,21 +161,28 @@ const AdminInteriorImages = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="wallPosition">Vị trí ốp trong nhà *</label>
-              <select
-                id="wallPosition"
-                name="wallPosition"
-                value={formData.wallPosition}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">-- Chọn vị trí --</option>
-                {wallPositions.map((position) => (
-                  <option key={position} value={position}>
-                    {position}
-                  </option>
-                ))}
-              </select>
+              <label>Vị trí ốp trong nhà *</label>
+              <div className="multi-select">
+                {wallPositions.map((position) => {
+                  const selected = formData.wallPosition.includes(position);
+                  return (
+                    <label
+                      key={position}
+                      className={`multi-option ${selected ? 'is-selected' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        name="wallPosition"
+                        value={position}
+                        checked={selected}
+                        onChange={() => toggleWallPosition(position)}
+                      />
+                      <span>{position}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <small className="form-hint">Chọn một hoặc nhiều vị trí phù hợp</small>
             </div>
 
             <div className="form-group">
@@ -253,15 +217,15 @@ const AdminInteriorImages = () => {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Đang xử lý...' : editingId ? 'Cập nhật' : 'Thêm mới'}
+                <button type="submit" className="btn btn-primary" disabled={isLoading || isCreating || isUpdating || isDeleting}>
+                {isLoading || isCreating || isUpdating || isDeleting ? 'Đang xử lý...' : editingId ? 'Cập nhật' : 'Thêm mới'}
               </button>
               {editingId && (
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={resetForm}
-                  disabled={loading}
+                  onClick={handleResetForm}
+                  disabled={isLoading || isCreating || isUpdating || isDeleting}
                 >
                   Hủy
                 </button>
@@ -274,9 +238,9 @@ const AdminInteriorImages = () => {
         <div className="admin-list-section">
           <h2 className="list-title">Danh Sách Hình Ảnh ({images.length})</h2>
 
-          {loading && !images.length && <div className="loading">Đang tải...</div>}
+          {isLoading && !images.length && <div className="loading">Đang tải...</div>}
 
-          {images.length === 0 && !loading && (
+          {images.length === 0 && !isLoading && (
             <div className="empty-state">Chưa có hình ảnh nào</div>
           )}
 
@@ -298,7 +262,10 @@ const AdminInteriorImages = () => {
                     <strong>Loại đá:</strong> {image.stoneType}
                   </p>
                   <p className="image-detail">
-                    <strong>Vị trí:</strong> {image.wallPosition}
+                    <strong>Vị trí:</strong>{' '}
+                    {Array.isArray(image.wallPosition)
+                      ? image.wallPosition.join(', ')
+                      : image.wallPosition}
                   </p>
                   {image.description && (
                     <p className="image-description">{image.description}</p>
@@ -308,14 +275,14 @@ const AdminInteriorImages = () => {
                   <button
                     className="btn btn-edit"
                     onClick={() => handleEdit(image)}
-                    disabled={loading}
+                    disabled={isLoading || isCreating || isUpdating || isDeleting}
                   >
                     Sửa
                   </button>
                   <button
                     className="btn btn-delete"
                     onClick={() => handleDelete(image._id)}
-                    disabled={loading}
+                    disabled={isLoading || isCreating || isUpdating || isDeleting}
                   >
                     Xóa
                   </button>

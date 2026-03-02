@@ -7,8 +7,15 @@ if (process.env.CLOUDINARY_CLOUD_NAME &&
     process.env.CLOUDINARY_API_KEY && 
     process.env.CLOUDINARY_API_SECRET) {
   try {
+    const rawCloudName = process.env.CLOUDINARY_CLOUD_NAME.trim();
+    const normalizedCloudName = rawCloudName.toLowerCase();
+    if (rawCloudName !== normalizedCloudName) {
+      console.warn(
+        `⚠️  CLOUDINARY_CLOUD_NAME has uppercase letters, normalizing to "${normalizedCloudName}"`
+      );
+    }
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      cloud_name: normalizedCloudName,
       api_key: process.env.CLOUDINARY_API_KEY,
       api_secret: process.env.CLOUDINARY_API_SECRET,
       secure: true // Sử dụng HTTPS

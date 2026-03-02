@@ -13,9 +13,13 @@ const interiorImageSchema = new mongoose.Schema({
     trim: true
   },
   wallPosition: {
-    type: String,
+    type: [String],
     required: [true, 'Vị trí ốp trong nhà là bắt buộc'],
-    trim: true
+    default: [],
+    validate: {
+      validator: (value) => Array.isArray(value) && value.length > 0,
+      message: 'Vị trí ốp trong nhà là bắt buộc'
+    }
   },
   description: {
     type: String,

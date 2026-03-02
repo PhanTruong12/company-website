@@ -71,6 +71,43 @@
   transition: border-color 0.3s;
 }
 
+.multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.multi-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #d7dbe3;
+  background: #f7f9fc;
+  color: #1e3a5f;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.multi-option input {
+  display: none;
+}
+
+.multi-option:hover {
+  border-color: #1e3a5f;
+  background: #eef2f8;
+}
+
+.multi-option.is-selected {
+  background: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
+  box-shadow: 0 4px 10px rgba(30, 58, 95, 0.2);
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {

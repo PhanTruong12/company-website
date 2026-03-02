@@ -24,18 +24,18 @@ const Showroom = () => {
 
   // Đọc filter từ URL params - khởi tạo với giá trị từ URL
   const [selectedStoneType, setSelectedStoneType] = useState<string>('');
-  const [selectedWallPosition, setSelectedWallPosition] = useState<string>('');
+  const [selectedWallPosition, setSelectedWallPosition] = useState<string[]>([]);
   
   // State cho sắp xếp: 'az' (A-Z), 'za' (Z-A), 'default' (mặc định)
   const [sortOrder, setSortOrder] = useState<'az' | 'za' | 'default'>('az');
 
-  const loadImages = useCallback(async (stoneType?: string, wallPosition?: string) => {
+  const loadImages = useCallback(async (stoneType?: string, wallPosition?: string[]) => {
     setLoading(true);
     setError(null);
     try {
       const data = await getInteriorImages(
         stoneType || undefined,
-        wallPosition || undefined
+        wallPosition && wallPosition.length > 0 ? wallPosition : undefined
       );
       setImages(data);
     } catch (err) {
@@ -49,7 +49,16 @@ const Showroom = () => {
   // Đợi stoneTypes load xong rồi mới match và set state
   useEffect(() => {
     const stoneTypeFromUrl = searchParams.get('stoneType') || '';
-    const wallPositionFromUrl = searchParams.get('wallPosition') || '';
+    const decodeQueryValue = (value: string) =>
+      decodeURIComponent(value.replace(/\+/g, ' '));
+
+    const rawWallPosition = searchParams.get('wallPosition') || '';
+    const wallPositionFromUrl = rawWallPosition
+      ? decodeQueryValue(rawWallPosition)
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : [];
     
     // Decode URL parameter (trong trường hợp có ký tự đặc biệt)
     const decodedStoneType = stoneTypeFromUrl ? decodeURIComponent(stoneTypeFromUrl) : '';
@@ -114,29 +123,33 @@ const Showroom = () => {
     setSearchParams(newParams, { replace: true });
   };
 
-  const handleWallPositionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectedWallPosition(value);
-    
-    // Load images ngay khi user thay đổi
-    loadImages(selectedStoneType, value);
-    
-    // Cập nhật URL params
+  const syncWallPositions = (next: string[]) => {
+    loadImages(selectedStoneType, next);
     const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set('wallPosition', value);
+    if (next.length > 0) {
+      newParams.set('wallPosition', next.join(','));
     } else {
       newParams.delete('wallPosition');
     }
     setSearchParams(newParams, { replace: true });
   };
 
+  const toggleWallPosition = (position: string) => {
+    setSelectedWallPosition((prev) => {
+      const next = prev.includes(position)
+        ? prev.filter((item) => item !== position)
+        : [...prev, position];
+      syncWallPositions(next);
+      return next;
+    });
+  };
+
   const clearFilters = () => {
     setSelectedStoneType('');
-    setSelectedWallPosition('');
+    setSelectedWallPosition([]);
     
     // Load images với filter rỗng
-    loadImages('', '');
+    loadImages('', []);
     
     // Xóa tất cả params khỏi URL
     setSearchParams({}, { replace: true });
@@ -172,6 +185,7 @@ const Showroom = () => {
   const sortedWallPositions = [...wallPositions].sort((a, b) => 
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
+  const filteredWallPositions = sortedWallPositions;
 
   const closeImageModal = () => {
     setSelectedImage(null);
@@ -192,72 +206,101 @@ const Showroom = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage]);
 
+  const hasActiveFilters = !!selectedStoneType || selectedWallPosition.length > 0;
+
   return (
     <div className="showroom">
       <div className="showroom-container">
-        <div className="showroom-header">
-          <h1 className="showroom-title">Showroom</h1>
-          <p className="showroom-subtitle">
-            Khám phá bộ sưu tập hình ảnh nội thất với đá cao cấp
-          </p>
-        </div>
-
-        {/* Filters */}
+        {/* Filter bar - phong cách card nhẹ */}
         <div className="showroom-filters">
-          <div className="filter-group">
-            <label htmlFor="stoneType">Lọc theo loại đá:</label>
-            <select
-              id="stoneType"
-              value={selectedStoneType}
-              onChange={handleStoneTypeChange}
-            >
-              <option value="">Tất cả</option>
-              {isLoadingStoneTypes ? (
-                <option disabled>Đang tải...</option>
-              ) : (
-                sortedStoneTypes.map((type) => (
-                  <option key={type.name} value={type.name}>
-                    {type.name}
-                  </option>
-                ))
+          <div className="filter-card">
+            <div className="filter-row-main">
+              <div className="filter-field">
+                <label htmlFor="stoneType">Loại đá</label>
+                <select
+                  id="stoneType"
+                  value={selectedStoneType}
+                  onChange={handleStoneTypeChange}
+                >
+                  <option value="">Tất cả</option>
+                  {isLoadingStoneTypes ? (
+                    <option disabled>Đang tải...</option>
+                  ) : (
+                    sortedStoneTypes.map((type) => (
+                      <option key={type.name} value={type.name}>
+                        {type.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="sortOrder">Sắp xếp</label>
+                <select
+                  id="sortOrder"
+                  value={sortOrder}
+                  onChange={(e) =>
+                    setSortOrder(e.target.value as 'az' | 'za' | 'default')
+                  }
+                >
+                  <option value="az">A - Z</option>
+                  <option value="za">Z - A</option>
+                  <option value="default">Mặc định</option>
+                </select>
+              </div>
+              <div className="filter-row-positions">
+                <div className="filter-positions-head">
+                  <span className="filter-positions-label">Vị trí sử dụng</span>
+                  <span className="filter-positions-count">
+                    Đã chọn {selectedWallPosition.length} vị trí
+                  </span>
+                </div>
+                <div className="filter-chips-wrap">
+                  <div
+                    className="filter-chips-scroll"
+                    role="group"
+                    aria-label="Chọn vị trí ốp"
+                  >
+                    <button
+                      type="button"
+                      className={`filter-chip ${selectedWallPosition.length === 0 ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        if (selectedWallPosition.length === 0) return;
+                        setSelectedWallPosition([]);
+                        syncWallPositions([]);
+                      }}
+                      aria-pressed={selectedWallPosition.length === 0}
+                    >
+                      Tất cả
+                    </button>
+                    {filteredWallPositions.map((position) => {
+                      const selected = selectedWallPosition.includes(position);
+                      return (
+                        <button
+                          key={position}
+                          type="button"
+                          className={`filter-chip ${selected ? 'is-selected' : ''}`}
+                          onClick={() => toggleWallPosition(position)}
+                          aria-pressed={selected}
+                        >
+                          {position}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  className="filter-reset"
+                  onClick={clearFilters}
+                >
+                  Xóa bộ lọc
+                </button>
               )}
-            </select>
+            </div>
           </div>
-
-          <div className="filter-group">
-            <label htmlFor="wallPosition">Lọc theo vị trí:</label>
-            <select
-              id="wallPosition"
-              value={selectedWallPosition}
-              onChange={handleWallPositionChange}
-            >
-              <option value="">Tất cả</option>
-              {sortedWallPositions.map((position) => (
-                <option key={position} value={position}>
-                  {position}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="sortOrder">Sắp xếp:</label>
-            <select
-              id="sortOrder"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'az' | 'za' | 'default')}
-            >
-              <option value="az">A - Z</option>
-              <option value="za">Z - A</option>
-              <option value="default">Mặc định</option>
-            </select>
-          </div>
-
-          {(selectedStoneType || selectedWallPosition) && (
-            <button className="btn-clear-filters" onClick={clearFilters}>
-              Xóa bộ lọc
-            </button>
-          )}
         </div>
 
         {/* Loading & Error */}
@@ -280,7 +323,7 @@ const Showroom = () => {
             {images.length === 0 ? (
               <div className="showroom-empty">
                 <p>Không tìm thấy hình ảnh nào với bộ lọc hiện tại.</p>
-                {(selectedStoneType || selectedWallPosition) && (
+                {(selectedStoneType || selectedWallPosition.length > 0) && (
                   <button onClick={clearFilters} className="btn-clear-filters">
                     Xem tất cả hình ảnh
                   </button>
@@ -315,7 +358,11 @@ const Showroom = () => {
                             <h3 className="gallery-title">{image.name}</h3>
                             <p className="gallery-meta">
                               <span className="gallery-tag">{image.stoneType}</span>
-                              <span className="gallery-tag">{image.wallPosition}</span>
+                              <span className="gallery-tag">
+                                {Array.isArray(image.wallPosition)
+                                  ? image.wallPosition.join(', ')
+                                  : image.wallPosition}
+                              </span>
                             </p>
                             {image.description && (
                               <p className="gallery-description">{image.description}</p>
@@ -359,7 +406,11 @@ const Showroom = () => {
                 <h3 className="image-modal-title">{selectedImage.name}</h3>
                 <div className="image-modal-meta">
                   <span className="image-modal-tag">{selectedImage.stoneType}</span>
-                  <span className="image-modal-tag">{selectedImage.wallPosition}</span>
+                  <span className="image-modal-tag">
+                    {Array.isArray(selectedImage.wallPosition)
+                      ? selectedImage.wallPosition.join(', ')
+                      : selectedImage.wallPosition}
+                  </span>
                 </div>
                 {selectedImage.description && (
                   <p className="image-modal-description">{selectedImage.description}</p>

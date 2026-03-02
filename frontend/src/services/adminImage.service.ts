@@ -9,7 +9,7 @@ export interface InteriorImage {
   _id: string;
   name: string;
   stoneType: string;
-  wallPosition: string;
+  wallPosition: string[];
   description: string;
   imageUrl: string;
   createdAt: string;

@@ -4,11 +4,14 @@
  * Returns Cloudinary middleware if configured, otherwise local storage middleware
  */
 const getUploadMiddleware = () => {
-  const hasCloudinaryConfig = process.env.CLOUDINARY_CLOUD_NAME && 
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim() || '';
+  const cloudNameLower = cloudName.toLowerCase();
+  const hasCloudinaryConfig = cloudName && 
                               process.env.CLOUDINARY_API_KEY && 
                               process.env.CLOUDINARY_API_SECRET;
+  const cloudNameValid = cloudName === cloudNameLower && /^[a-z0-9_-]+$/.test(cloudName);
 
-  if (hasCloudinaryConfig) {
+  if (hasCloudinaryConfig && cloudNameValid) {
     try {
       // Check if packages are installed
       require.resolve('cloudinary');
@@ -26,11 +29,15 @@ const getUploadMiddleware = () => {
       return require('../../middleware/upload');
     }
   } else {
-    // No Cloudinary config, use Local Storage
+    // No Cloudinary config or invalid name, use Local Storage
     const upload = require('../../middleware/upload');
     console.log('📁 Using Local Storage for image storage');
     if (process.env.NODE_ENV === 'development') {
-      console.log('   Tip: Add CLOUDINARY_CLOUD_NAME to .env to use Cloudinary');
+      if (!hasCloudinaryConfig) {
+        console.log('   Tip: Add CLOUDINARY_CLOUD_NAME to .env to use Cloudinary');
+      } else if (!cloudNameValid) {
+        console.log('   Tip: CLOUDINARY_CLOUD_NAME must be lowercase (a-z, 0-9, _ or -)');
+      }
     }
     return upload;
   }

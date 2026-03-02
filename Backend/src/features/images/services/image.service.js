@@ -4,13 +4,23 @@ const { NotFoundError, BadRequestError } = require('../../../shared/utils/errors
 const { ERROR_MESSAGES } = require('../../../shared/constants');
 const { getImageUrl, getCloudinaryPublicId, deleteFile } = require('../../../shared/utils/fileHelper');
 
+const normalizeWallPositions = (value) => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  return raw
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 /**
  * Create new interior image
  */
 const createImage = async (data, file) => {
-  const { name, stoneType, wallPosition, description } = data;
+  const { name, stoneType, description } = data;
+  const wallPositions = normalizeWallPositions(data.wallPositions ?? data.wallPosition);
 
-  if (!name || !stoneType || !wallPosition) {
+  if (!name || !stoneType || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
@@ -25,7 +35,7 @@ const createImage = async (data, file) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
-      wallPosition,
+      wallPosition: wallPositions,
       description: description || '',
       imageUrl,
       ...(cloudinaryPublicId && { cloudinaryPublicId })
@@ -51,7 +61,14 @@ const getImages = async (filters = {}, pagination = {}) => {
 
   const filter = {};
   if (stoneType) filter.stoneType = stoneType;
-  if (wallPosition) filter.wallPosition = wallPosition;
+  if (wallPosition) {
+    const positions = normalizeWallPositions(wallPosition);
+    if (positions.length === 1) {
+      filter.wallPosition = positions[0];
+    } else if (positions.length > 1) {
+      filter.wallPosition = { $in: positions };
+    }
+  }
 
   const skip = (page - 1) * limit;
   const total = await InteriorImage.countDocuments(filter);
@@ -79,7 +96,14 @@ const getAllImages = async (filters = {}) => {
   const filter = {};
 
   if (stoneType) filter.stoneType = stoneType;
-  if (wallPosition) filter.wallPosition = wallPosition;
+  if (wallPosition) {
+    const positions = normalizeWallPositions(wallPosition);
+    if (positions.length === 1) {
+      filter.wallPosition = positions[0];
+    } else if (positions.length > 1) {
+      filter.wallPosition = { $in: positions };
+    }
+  }
 
   const images = await InteriorImage.find(filter).sort({ createdAt: -1 });
   return images;
@@ -100,21 +124,22 @@ const getImageById = async (id) => {
  * Update image
  */
 const updateImage = async (id, data, file) => {
-  const { name, stoneType, wallPosition, description } = data;
+  const { name, stoneType, description } = data;
+  const wallPositions = normalizeWallPositions(data.wallPositions ?? data.wallPosition);
 
   const image = await InteriorImage.findById(id);
   if (!image) {
     throw new NotFoundError(ERROR_MESSAGES.RESOURCE_NOT_FOUND('Hình ảnh'));
   }
 
-  if (!name || !stoneType || !wallPosition) {
+  if (!name || !stoneType || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
   // Update fields
   image.name = name;
   image.stoneType = stoneType;
-  image.wallPosition = wallPosition;
+  image.wallPosition = wallPositions;
   if (description !== undefined) {
     image.description = description;
   }

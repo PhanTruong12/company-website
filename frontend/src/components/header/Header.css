@@ -1,39 +1,42 @@
-/* Header.css - Styles cho Header component */
+/* Header.css - Styles cho Header component (hiện đại, giữ màu) */
 .main-header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease;
 }
 
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
-  gap: 32px;
+  height: 72px;
+  gap: 28px;
 }
 
 /* Logo */
 .header-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-decoration: none;
-  color: #1e3a5f;
+  color: #0f172a;
   font-weight: 700;
-  font-size: 1.25rem;
-  transition: opacity 0.3s;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .header-logo:hover {
-  opacity: 0.8;
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Logo img - Giữ lại cho backward compatibility */
@@ -55,7 +58,7 @@
 .header-nav {
   display: none;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
   justify-content: center;
 }
@@ -69,40 +72,42 @@
 .nav-link {
   padding: 8px 16px;
   text-decoration: none;
-  color: #333;
+  color: #4b5563;
   font-weight: 500;
-  font-size: 0.95rem;
-  border-radius: 8px;
-  transition: all 0.3s;
+  font-size: 0.925rem;
+  letter-spacing: 0.01em;
+  border-radius: 10px;
+  transition: color 0.2s ease, background-color 0.2s ease;
   position: relative;
 }
 
 .nav-link:hover {
-  background: rgba(30, 58, 95, 0.05);
-  color: #1e3a5f;
+  background: rgba(15, 23, 42, 0.04);
+  color: #111827;
 }
 
 .nav-link.active {
-  color: #1e3a5f;
+  color: #0f766e;
   font-weight: 600;
 }
 
 .nav-link.active::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 16px;
-  right: 16px;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
   height: 2px;
-  background: #1e3a5f;
-  border-radius: 2px;
+  background: #0f766e;
+  border-radius: 999px;
 }
 
 /* Right Section */
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   margin-left: auto;
 }
 
@@ -110,21 +115,24 @@
   display: none;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2a4a6f 100%);
-  color: white;
+  padding: 8px 16px;
+  background: transparent;
+  color: #0f766e;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 118, 110, 0.6);
   font-weight: 600;
-  font-size: 0.9rem;
-  transition: all 0.3s;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   white-space: nowrap;
 }
 
 .header-phone:hover {
-  background: linear-gradient(135deg, #2a4a6f 0%, #3a5a7f 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(30, 58, 95, 0.3);
+  background-color: #0f766e;
+  color: #ffffff;
+  border-color: #0f766e;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
 }
 
 @media (min-width: 768px) {
@@ -137,19 +145,27 @@
 .mobile-menu-toggle {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   z-index: 1001;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(15, 23, 42, 0.04);
 }
 
 .mobile-menu-toggle span {
-  width: 24px;
+  width: 22px;
   height: 2px;
   background: #333;
-  transition: all 0.3s;
+  border-radius: 1px;
+  transition: all 0.25s ease;
 }
 
 @media (min-width: 1024px) {
@@ -161,25 +177,31 @@
 /* Responsive adjustments */
 @media (max-width: 1023px) {
   .header-container {
-    padding: 0 16px;
-    height: 70px;
+    padding: 0 20px;
+    height: 72px;
   }
 
   .header-nav {
     position: fixed;
-    top: 70px;
+    top: 72px;
     left: 0;
     right: 0;
-    background: white;
+    background: #ffffff;
     flex-direction: column;
     padding: 24px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateX(-100%);
-    transition: transform 0.3s;
+    transition: transform 0.3s ease;
   }
 
   .header-nav.mobile-open {
     transform: translateX(0);
+  }
+
+  .header-nav .nav-link {
+    padding: 12px 16px;
+    border-radius: 10px;
   }
 }
 

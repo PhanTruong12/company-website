@@ -32,7 +32,11 @@ export const SearchResultItem = ({ result, onClick }: SearchResultItemProps) => 
         <h4 className="search-result-name">{result.name}</h4>
         <div className="search-result-meta">
           <span className="search-result-tag">{result.stoneType}</span>
-          <span className="search-result-tag">{result.wallPosition}</span>
+          <span className="search-result-tag">
+            {Array.isArray(result.wallPosition)
+              ? result.wallPosition.join(', ')
+              : result.wallPosition}
+          </span>
         </div>
       </div>
     </Link>

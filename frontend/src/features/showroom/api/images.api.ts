@@ -7,12 +7,16 @@ import type { InteriorImage } from '../../../shared/types';
  */
 export const getInteriorImages = async (
   stoneType?: string,
-  wallPosition?: string
+  wallPosition?: string | string[]
 ): Promise<InteriorImage[]> => {
   try {
     const params: Record<string, string> = {};
     if (stoneType) params.stoneType = stoneType;
-    if (wallPosition) params.wallPosition = wallPosition;
+    if (wallPosition) {
+      params.wallPosition = Array.isArray(wallPosition)
+        ? wallPosition.join(',')
+        : wallPosition;
+    }
 
     const response = await apiClient.get<ApiResponse<InteriorImage[]>>('/interior-images', {
       params,

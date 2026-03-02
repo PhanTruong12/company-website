@@ -7,15 +7,25 @@ const { sendSuccess, sendPaginated } = require('../utils/response');
 const { ERROR_MESSAGES, SUCCESS_MESSAGES, HTTP_STATUS, PAGINATION } = require('../constants');
 const { getImageUrl, getCloudinaryPublicId, deleteFile } = require('../utils/fileHelper');
 
+const normalizeWallPositions = (value) => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  return raw
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 /**
  * Create new image (Admin only)
  * POST /api/admin/images
  */
 const createImage = async (req, res) => {
-  const { name, stoneType, wallPosition, description } = req.body;
+  const { name, stoneType, description } = req.body;
+  const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
   // Validation
-  if (!name || !stoneType || !wallPosition) {
+  if (!name || !stoneType || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
@@ -32,7 +42,7 @@ const createImage = async (req, res) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
-      wallPosition,
+      wallPosition: wallPositions,
       description: description || '',
       imageUrl,
       ...(cloudinaryPublicId && { cloudinaryPublicId })
@@ -66,7 +76,14 @@ const getImages = async (req, res) => {
 
   // Add filters if provided
   if (stoneType) filter.stoneType = stoneType;
-  if (wallPosition) filter.wallPosition = wallPosition;
+  if (wallPosition) {
+    const positions = normalizeWallPositions(wallPosition);
+    if (positions.length === 1) {
+      filter.wallPosition = positions[0];
+    } else if (positions.length > 1) {
+      filter.wallPosition = { $in: positions };
+    }
+  }
 
   // Pagination
   const pageNum = parseInt(page) || PAGINATION.DEFAULT_PAGE;
@@ -114,7 +131,8 @@ const getImageById = async (req, res) => {
  */
 const updateImage = async (req, res) => {
   const { id } = req.params;
-  const { name, stoneType, wallPosition, description } = req.body;
+  const { name, stoneType, description } = req.body;
+  const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
   // Find image
   const image = await InteriorImage.findById(id);
@@ -124,14 +142,14 @@ const updateImage = async (req, res) => {
   }
 
   // Validation
-  if (!name || !stoneType || !wallPosition) {
+  if (!name || !stoneType || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
   // Update fields
   image.name = name;
   image.stoneType = stoneType;
-  image.wallPosition = wallPosition;
+  image.wallPosition = wallPositions;
   if (description !== undefined) {
     image.description = description;
   }

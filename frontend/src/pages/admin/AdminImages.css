@@ -491,6 +491,43 @@
   transition: border-color 0.3s;
 }
 
+.multi-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.multi-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #e0e0e0;
+  background: #f7f9fc;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.multi-option input {
+  display: none;
+}
+
+.multi-option:hover {
+  border-color: #667eea;
+  background: #eef1ff;
+}
+
+.multi-option.is-selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
+}
+
 .admin-form-field input:focus,
 .admin-form-field select:focus,
 .admin-form-field textarea:focus {

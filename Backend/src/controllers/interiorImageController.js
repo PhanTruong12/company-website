@@ -4,6 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const { getImageUrl } = require('../utils/fileHelper');
 
+const normalizeWallPositions = (value) => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  return raw
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
 /**
  * Tạo hình ảnh mới
  * POST /api/interior-images
@@ -11,9 +20,10 @@ const { getImageUrl } = require('../utils/fileHelper');
 const createInteriorImage = async (req, res) => {
   try {
     // Validate dữ liệu
-    const { name, stoneType, wallPosition, description } = req.body;
+    const { name, stoneType, description } = req.body;
+    const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
-    if (!name || !stoneType || !wallPosition) {
+    if (!name || !stoneType || wallPositions.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng điền đầy đủ thông tin: name, stoneType, wallPosition'
@@ -34,7 +44,7 @@ const createInteriorImage = async (req, res) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
-      wallPosition,
+      wallPosition: wallPositions,
       description: description || '',
       imageUrl
     });
@@ -76,7 +86,12 @@ const getInteriorImages = async (req, res) => {
       filter.stoneType = stoneType;
     }
     if (wallPosition) {
-      filter.wallPosition = wallPosition;
+      const positions = normalizeWallPositions(wallPosition);
+      if (positions.length === 1) {
+        filter.wallPosition = positions[0];
+      } else if (positions.length > 1) {
+        filter.wallPosition = { $in: positions };
+      }
     }
 
     const images = await InteriorImage.find(filter)
@@ -133,7 +148,8 @@ const getInteriorImageById = async (req, res) => {
 const updateInteriorImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, stoneType, wallPosition, description } = req.body;
+    const { name, stoneType, description } = req.body;
+    const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
     // Tìm hình ảnh
     const image = await InteriorImage.findById(id);
@@ -146,7 +162,7 @@ const updateInteriorImage = async (req, res) => {
     }
 
     // Validate dữ liệu
-    if (!name || !stoneType || !wallPosition) {
+    if (!name || !stoneType || wallPositions.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Vui lòng điền đầy đủ thông tin: name, stoneType, wallPosition'
@@ -156,7 +172,7 @@ const updateInteriorImage = async (req, res) => {
     // Cập nhật thông tin
     image.name = name;
     image.stoneType = stoneType;
-    image.wallPosition = wallPosition;
+    image.wallPosition = wallPositions;
     if (description !== undefined) {
       image.description = description;
     }
