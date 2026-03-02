@@ -132,7 +132,7 @@ const AdminImages = () => {
                 <div key={image._id} className="admin-image-card">
                   <div className="admin-image-thumbnail">
                     <img
-                      src={getImageUrl(image.imageUrl)}
+                      src={getImageUrl(image.imageUrl, { width: 400, crop: 'fill' })}
                       alt={image.name}
                       loading="lazy"
                     />

@@ -1,5 +1,5 @@
 // imageUrl.ts - Utility để xử lý URL ảnh từ backend
-// Hỗ trợ cả Cloudinary URL và local storage URL
+// Hỗ trợ cả Cloudinary URL (kèm transform) và local storage URL
 
 import { publicAsset } from './publicAsset';
 
@@ -19,13 +19,47 @@ const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 // Debug mode (chỉ log trong development)
 const DEBUG = import.meta.env.DEV;
 
+const isCloudinaryUrl = (url: string): boolean =>
+  url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
+
 /**
- * Chuyển đổi imageUrl từ backend thành URL đầy đủ để hiển thị
- * @param imageUrl - URL từ backend (có thể là Cloudinary URL hoặc relative path)
- * @returns URL đầy đủ để sử dụng trong img src
+ * Chèn Cloudinary transformation vào URL (sau /upload/, trước /v123/).
+ * Ví dụ: width 400 -> w_400,c_fill,q_auto,f_auto
  */
-export const getImageUrl = (imageUrl: string | undefined | null): string => {
-  // Nếu không có imageUrl, trả về placeholder
+function applyCloudinaryTransform(url: string, options: ImageUrlOptions): string {
+  const parts: string[] = [];
+  if (options.width != null) parts.push(`w_${options.width}`);
+  if (options.height != null) parts.push(`h_${options.height}`);
+  parts.push(options.crop ?? 'fill');
+  parts.push(options.quality ?? 'auto');
+  parts.push(options.format ?? 'auto');
+  const transform = parts.join(',');
+  return url.replace(/(\/upload\/)/, `$1${transform}/`);
+}
+
+export interface ImageUrlOptions {
+  /** Chiều rộng (px) - dùng cho thumbnail */
+  width?: number;
+  /** Chiều cao (px) */
+  height?: number;
+  /** Crop mode: fill | limit | fit | scale | thumb */
+  crop?: string;
+  /** Chất lượng: auto | good | eco | low | số */
+  quality?: string;
+  /** Format: auto | webp | jpg | png */
+  format?: string;
+}
+
+/**
+ * Chuyển đổi imageUrl từ backend thành URL đầy đủ để hiển thị.
+ * Nếu là Cloudinary và truyền options (vd. width), URL sẽ dùng transform để tối ưu tải.
+ * @param imageUrl - URL từ backend (Cloudinary hoặc relative path)
+ * @param options - Tùy chọn transform (chỉ áp dụng cho Cloudinary): width, height, crop, quality, format
+ */
+export function getImageUrl(
+  imageUrl: string | undefined | null,
+  options?: ImageUrlOptions
+): string {
   if (!imageUrl) {
     if (DEBUG) {
       console.warn('[getImageUrl] No imageUrl provided, using placeholder');
@@ -33,37 +67,31 @@ export const getImageUrl = (imageUrl: string | undefined | null): string => {
     return publicAsset('placeholder.jpg');
   }
 
-  // Nếu đã là full URL (Cloudinary hoặc external), trả về trực tiếp
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    if (DEBUG) {
+  const isFullUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+
+  if (isFullUrl) {
+    if (options && isCloudinaryUrl(imageUrl)) {
+      return applyCloudinaryTransform(imageUrl, options);
+    }
+    if (DEBUG && isFullUrl) {
       console.log('[getImageUrl] Using external URL:', imageUrl);
     }
     return imageUrl;
   }
 
-  // Chỉ prepend backend base URL trong development
-  // Và chỉ khi imageUrl là relative path bắt đầu bằng "/"
   if (import.meta.env.DEV && imageUrl.startsWith('/')) {
     const baseUrl = BACKEND_BASE_URL.endsWith('/')
       ? BACKEND_BASE_URL.slice(0, -1)
       : BACKEND_BASE_URL;
-
     const fullUrl = `${baseUrl}${imageUrl}`;
-
     if (DEBUG) {
-      console.log('[getImageUrl] Constructed URL:', {
-        original: imageUrl,
-        backendBase: BACKEND_BASE_URL,
-        final: fullUrl
-      });
+      console.log('[getImageUrl] Constructed URL:', { original: imageUrl, final: fullUrl });
     }
-
     return fullUrl;
   }
 
-  // Production: dùng nguyên URL backend trả về
   return imageUrl;
-};
+}
 
 /**
  * Kiểm tra xem URL có phải là external URL không

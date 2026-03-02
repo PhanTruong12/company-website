@@ -345,7 +345,7 @@ const Showroom = () => {
                     >
                       <div className="gallery-image-wrapper">
                         <img
-                          src={getImageUrl(image.imageUrl)}
+                          src={getImageUrl(image.imageUrl, { width: 600, crop: 'fill' })}
                           alt={image.name}
                           className="gallery-image"
                           loading="lazy"

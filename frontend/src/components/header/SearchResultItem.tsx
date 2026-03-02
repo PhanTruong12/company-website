@@ -11,7 +11,7 @@ interface SearchResultItemProps {
 }
 
 export const SearchResultItem = ({ result, onClick }: SearchResultItemProps) => {
-  const imageUrl = getImageUrl(result.imageUrl);
+  const imageUrl = getImageUrl(result.imageUrl, { width: 200, crop: 'fill' });
 
   return (
     <Link

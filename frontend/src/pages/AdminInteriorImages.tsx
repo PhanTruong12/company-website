@@ -249,7 +249,7 @@ const AdminInteriorImages = () => {
               <div key={image._id} className="image-card">
                 <div className="image-thumbnail">
                   <img
-                    src={getImageUrl(image.imageUrl)}
+                    src={getImageUrl(image.imageUrl, { width: 400, crop: 'fill' })}
                     alt={image.name}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
