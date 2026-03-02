@@ -1,7 +1,7 @@
 // features/admin/api/images.api.ts - Admin images API
 import axios from 'axios';
-import { adminApiClient, handleApiError, tokenStorage, type ApiResponse, type Pagination } from '../../../core/api/client';
-import type { InteriorImage } from '../../../shared/types';
+import { adminApiClient, handleApiError, tokenStorage, type ApiResponse } from '../../../core/api/client';
+import type { InteriorImage, Pagination } from '../../../shared/types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
