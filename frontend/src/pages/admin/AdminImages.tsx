@@ -13,6 +13,7 @@ import './AdminImages.css';
 const AdminImages = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingImage, setEditingImage] = useState<InteriorImage | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const {
     formData,
     resetForm,
@@ -34,7 +35,6 @@ const AdminImages = () => {
     deleteImage: deleteImageAsync,
     isCreating,
     isUpdating,
-    isDeleting,
   } = useAdminImagesCrud();
 
   const handleOpenModal = (image?: InteriorImage) => {
@@ -83,10 +83,13 @@ const AdminImages = () => {
       return;
     }
 
+    setDeletingId(id);
     try {
       await deleteImageAsync(id);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -129,7 +132,10 @@ const AdminImages = () => {
           ) : (
             <div className="admin-images-grid">
               {images.map((image) => (
-                <div key={image._id} className="admin-image-card">
+                <div
+                  key={image._id}
+                  className={`admin-image-card ${deletingId === image._id ? 'is-deleting' : ''}`}
+                >
                   <div className="admin-image-thumbnail">
                     <img
                       src={getImageUrl(image.imageUrl, { width: 400, crop: 'fill' })}
@@ -172,11 +178,11 @@ const AdminImages = () => {
                     <button
                       onClick={() => handleDelete(image._id)}
                       className="btn-delete"
-                      disabled={isDeleting}
+                      disabled={deletingId !== null}
                       title="Xóa hình ảnh"
                     >
                       <span className="btn-icon">🗑️</span>
-                      <span>{isDeleting ? 'Đang xóa...' : 'Xóa'}</span>
+                      <span>{deletingId === image._id ? 'Đang xóa...' : 'Xóa'}</span>
                     </button>
                   </div>
                 </div>
