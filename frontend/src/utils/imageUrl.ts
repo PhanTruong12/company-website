@@ -3,18 +3,15 @@
 
 import { publicAsset } from './publicAsset';
 
-// Lấy API base URL từ environment variable
+// Lấy API base URL từ environment variable (thống nhất VITE_API_BASE_URL)
 const getApiBaseUrl = (): string => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-
-  // Development default
-  return 'http://localhost:5000/api';
+  const url = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
+  if (url) return String(url).trim();
+  return import.meta.env.DEV ? 'http://localhost:5000/api' : '';
 };
 
 const API_BASE_URL = getApiBaseUrl();
-const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+const BACKEND_BASE_URL = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : '';
 
 // Debug mode (chỉ log trong development)
 const DEBUG = import.meta.env.DEV;
@@ -79,15 +76,12 @@ export function getImageUrl(
     return imageUrl;
   }
 
-  if (import.meta.env.DEV && imageUrl.startsWith('/')) {
+  // Đường dẫn tương đối (/uploads/...) cần ghép với backend URL (cả dev và production)
+  if (imageUrl.startsWith('/') && BACKEND_BASE_URL) {
     const baseUrl = BACKEND_BASE_URL.endsWith('/')
       ? BACKEND_BASE_URL.slice(0, -1)
       : BACKEND_BASE_URL;
-    const fullUrl = `${baseUrl}${imageUrl}`;
-    if (DEBUG) {
-      console.log('[getImageUrl] Constructed URL:', { original: imageUrl, final: fullUrl });
-    }
-    return fullUrl;
+    return `${baseUrl}${imageUrl}`;
   }
 
   return imageUrl;
