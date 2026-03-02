@@ -57,6 +57,14 @@ adminApiClient.interceptors.response.use(
   }
 );
 
+/** Pagination metadata from API responses */
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 /**
  * Generic API response type
  */
@@ -64,12 +72,7 @@ export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data?: T;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination?: Pagination;
   count?: number;
 }
 

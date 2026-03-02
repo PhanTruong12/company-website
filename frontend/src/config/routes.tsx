@@ -1,5 +1,5 @@
 // routes.tsx - Route configuration for the application
-import type { ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import About from '../pages/About';
 import Services from '../pages/Services';
 import Contact from '../pages/Contact';
