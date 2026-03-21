@@ -3,6 +3,7 @@ FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
+ENV UPLOAD_ROOT=/data/uploads
 
 # Copy package files
 COPY package*.json ./
@@ -12,6 +13,11 @@ RUN npm install --omit=dev
 
 # Copy source code
 COPY . .
+
+# Fix: prevent uploaded images from being removed after deploy
+# Persist uploads outside app source directory.
+RUN mkdir -p /data/uploads/interior-images
+VOLUME ["/data/uploads"]
 
 # Expose port (Railway sẽ tự động map port)
 EXPOSE 5000

@@ -1,5 +1,7 @@
 // server.js - Main application entry point
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { loadEnv } = require('./src/config/env');
 const corsMiddleware = require('./src/config/cors');
 const connectDB = require('./src/config/database');
@@ -21,7 +23,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
-app.use('/uploads', express.static('uploads'));
+// Fix: prevent uploaded images from being removed after deploy
+// Serve uploads from configurable absolute path (supports mounted persistent volumes).
+const uploadRoot = process.env.UPLOAD_ROOT
+  ? path.resolve(process.env.UPLOAD_ROOT)
+  : path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadRoot)) {
+  fs.mkdirSync(uploadRoot, { recursive: true });
+}
+app.use('/uploads', express.static(uploadRoot));
 
 // ==================== Routes ====================
 // Health check endpoint (doesn't require database)

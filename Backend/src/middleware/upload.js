@@ -3,8 +3,33 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Tạo thư mục uploads nếu chưa tồn tại
-const uploadDir = path.join(__dirname, '../../uploads/interior-images');
+// Fix: prevent uploaded images from being removed after deploy
+// Use configurable upload root so production can mount persistent volume.
+const uploadRoot = process.env.UPLOAD_ROOT
+  ? path.resolve(process.env.UPLOAD_ROOT)
+  : path.resolve(process.cwd(), 'uploads');
+const uploadDir = path.join(uploadRoot, 'interior-images');
+
+// Guard production from accidentally using ephemeral local storage.
+if (
+  process.env.NODE_ENV === 'production' &&
+  !process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.STRICT_UPLOAD_STORAGE === 'true'
+) {
+  throw new Error(
+    'Local uploads are blocked by STRICT_UPLOAD_STORAGE=true. Configure Cloudinary or a persistent UPLOAD_ROOT.'
+  );
+}
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  !process.env.CLOUDINARY_CLOUD_NAME
+) {
+  console.warn(
+    '⚠️  Production is using local uploads. Set CLOUDINARY_* or persistent UPLOAD_ROOT to avoid losing files after deploy.'
+  );
+}
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }

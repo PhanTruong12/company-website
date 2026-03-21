@@ -2,6 +2,9 @@
 const fs = require('fs');
 const path = require('path');
 const cloudinary = require('../config/cloudinary');
+const uploadRoot = process.env.UPLOAD_ROOT
+  ? path.resolve(process.env.UPLOAD_ROOT)
+  : path.resolve(process.cwd(), 'uploads');
 
 /**
  * Check if URL is Cloudinary URL
@@ -65,9 +68,11 @@ const deleteLocalFile = (imageUrl) => {
     if (!imageUrl) return false;
     
     // Remove leading slash if present
-    const filePath = imageUrl.startsWith('/') 
-      ? path.join(__dirname, '../../', imageUrl.substring(1))
-      : path.join(__dirname, '../../', imageUrl);
+    const normalized = imageUrl.replace(/^\/+/, '');
+    const relativeToUploads = normalized.startsWith('uploads/')
+      ? normalized.substring('uploads/'.length)
+      : normalized;
+    const filePath = path.join(uploadRoot, relativeToUploads);
     
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
