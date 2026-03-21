@@ -8,6 +8,7 @@ import {
 } from '../features/admin/api';
 import { authService } from '../features/admin/lib/auth';
 import type { InteriorImage, Pagination } from '../shared/types';
+import { broadcastImagesUpdated } from '../utils/imageSync';
 
 type CrudOptions = {
   stoneType?: string;
@@ -59,7 +60,10 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       }
       return createImage(formData);
     },
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      broadcastImagesUpdated();
+    },
   });
 
   const updateMutation = useMutation({
@@ -67,7 +71,10 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       authService.isAuthenticated()
         ? updateImage(id, formData)
         : Promise.reject(new Error('Chưa đăng nhập')),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      broadcastImagesUpdated();
+    },
   });
 
   const deleteMutation = useMutation({
@@ -75,7 +82,10 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       authService.isAuthenticated()
         ? deleteImage(id)
         : Promise.reject(new Error('Chưa đăng nhập')),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      broadcastImagesUpdated();
+    },
   });
 
   return {

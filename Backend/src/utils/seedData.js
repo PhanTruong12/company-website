@@ -24,6 +24,12 @@ const seedStoneTypes = async () => {
         slug: 'tu-nhien',
         nameEn: 'Natural Stone',
         description: 'Đá tự nhiên với vẻ đẹp độc đáo và sang trọng'
+      },
+      {
+        name: 'Solid Surface',
+        slug: 'solid-surface',
+        nameEn: 'Solid Surface',
+        description: 'Đá Solid Surface với bề mặt liền mạch, dễ tạo hình và phù hợp nhiều ứng dụng nội thất'
       }
     ];
 

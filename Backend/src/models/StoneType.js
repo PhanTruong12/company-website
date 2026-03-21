@@ -6,7 +6,7 @@ const stoneTypeSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    enum: ['Thạch Anh', 'Nung Kết', 'Tự Nhiên'],
+    enum: ['Thạch Anh', 'Nung Kết', 'Tự Nhiên', 'Solid Surface'],
     trim: true
   },
   slug: {
@@ -16,7 +16,7 @@ const stoneTypeSchema = new mongoose.Schema({
   },
   nameEn: {
     type: String,
-    enum: ['Quartz', 'Sintered Stone', 'Natural Stone'],
+    enum: ['Quartz', 'Sintered Stone', 'Natural Stone', 'Solid Surface'],
     required: false
   },
   description: {

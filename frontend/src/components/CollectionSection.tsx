@@ -23,6 +23,13 @@ const collections = [
     stoneType: 'Tự Nhiên',
     id: 'tu-nhien',
   },
+  {
+    title: 'Bộ Sưu Tập Đá Solid Surface',
+    desc: 'Bộ sưu tập đá Solid Surface nổi bật với bề mặt liền mạch, dễ tạo hình và phù hợp cho các không gian nội thất hiện đại, tinh gọn.',
+    img: publicAsset('collection.jpg'),
+    stoneType: 'Solid Surface',
+    id: 'solid-surface',
+  },
 ];
 
 const CollectionSection = () => (

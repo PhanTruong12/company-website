@@ -18,20 +18,24 @@ const isCloudinaryUrl = (url) => {
 };
 
 /**
- * Extract public_id from Cloudinary URL
+ * Extract public_id from Cloudinary URL (kể cả URL có transformation)
+ * Format: .../upload/<transforms>/v<version>/<public_id>.<ext>
  */
 const extractCloudinaryPublicId = (imageUrl) => {
   try {
     const urlParts = imageUrl.split('/');
     const uploadIndex = urlParts.findIndex(part => part === 'upload');
-    
     if (uploadIndex === -1) return null;
-    
+
     const afterUpload = urlParts.slice(uploadIndex + 1);
-    const pathParts = afterUpload.filter(part => !part.startsWith('v'));
-    const publicId = pathParts.join('/').replace(/\.[^/.]+$/, '');
-    
-    return publicId || null;
+    const versionIndex = afterUpload.findIndex(part => /^v\d+$/.test(part));
+    if (versionIndex === -1) {
+      const pathParts = afterUpload.filter(part => !part.startsWith('v'));
+      const joined = pathParts.join('/').replace(/\.[^/.]+$/, '');
+      return joined || null;
+    }
+    const afterVersion = afterUpload.slice(versionIndex + 1).join('/').replace(/\.[^/.]+$/, '');
+    return afterVersion || null;
   } catch (error) {
     console.error('Error extracting Cloudinary public_id:', error.message);
     return null;

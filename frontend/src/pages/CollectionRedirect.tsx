@@ -13,6 +13,7 @@ const CollectionRedirect = () => {
       'thach-anh': ['Thạch Anh', 'Đá thạch anh', 'thạch anh'],
       'nung-ket': ['Nung Kết', 'Đá nung kết', 'nung kết'],
       'tu-nhien': ['Tự Nhiên', 'Đá tự nhiên', 'tự nhiên'],
+      'solid-surface': ['Solid Surface', 'Đá Solid Surface', 'solid surface'],
     };
 
     const possibleNames = stoneTypeMap[collectionId || ''];

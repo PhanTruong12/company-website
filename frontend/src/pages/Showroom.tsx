@@ -7,6 +7,7 @@ import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
 import { getImageUrl } from '../utils/imageUrl';
 import { publicAsset } from '../utils/publicAsset';
+import { subscribeImagesUpdated } from '../utils/imageSync';
 import './Showroom.css';
 
 const Showroom = () => {
@@ -143,6 +144,15 @@ const Showroom = () => {
       return next;
     });
   };
+
+  // Lắng nghe sự kiện cập nhật hình ảnh từ admin (realtime nhẹ)
+  useEffect(() => {
+    const unsubscribe = subscribeImagesUpdated(() => {
+      // Reload với filter hiện tại
+      loadImages(selectedStoneType, selectedWallPosition);
+    });
+    return unsubscribe;
+  }, [loadImages, selectedStoneType, selectedWallPosition]);
 
   const clearFilters = () => {
     setSelectedStoneType('');

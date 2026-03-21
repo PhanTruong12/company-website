@@ -40,9 +40,11 @@ const DEFAULT_STONE_TYPES = [
   'Đá thạch anh',
   'Đá nung kết',
   'Đá tự nhiên',
+  'Đá Solid Surface',
   'Thạch Anh',
   'Nung Kết',
-  'Tự Nhiên'
+  'Tự Nhiên',
+  'Solid Surface'
 ];
 
 /**

@@ -16,6 +16,7 @@ const CollectionDetail = () => {
     'thach-anh': 'Bộ Sưu Tập Đá Thạch Anh',
     'nung-ket': 'Bộ Sưu Tập Đá Nung Kết',
     'tu-nhien': 'Bộ Sưu Tập Đá Tự Nhiên',
+    'solid-surface': 'Bộ Sưu Tập Đá Solid Surface',
   };
 
   const title = collectionTitles[collectionId || 'thach-anh'] || 'Bộ Sưu Tập Đá';
