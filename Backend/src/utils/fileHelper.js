@@ -97,17 +97,23 @@ const deleteFile = async (imageUrl) => {
 };
 
 /**
+ * multer-storage-cloudinary v4 sets: path = secure_url, filename = public_id (not secure_url/public_id on file).
+ */
+const isHttpUrl = (s) => typeof s === 'string' && /^https?:\/\//i.test(s.trim());
+
+/**
  * Get image URL from multer file object
  */
 const getImageUrl = (file) => {
   if (!file) return null;
-  
-  // Cloudinary upload
+
   if (file.secure_url || file.url) {
     return file.secure_url || file.url;
   }
-  
-  // Local storage upload
+  if (isHttpUrl(file.path)) {
+    return file.path.trim();
+  }
+
   return `/uploads/interior-images/${file.filename}`;
 };
 
@@ -116,7 +122,11 @@ const getImageUrl = (file) => {
  */
 const getCloudinaryPublicId = (file) => {
   if (!file) return null;
-  return file.public_id || null;
+  if (file.public_id) return file.public_id;
+  if (isHttpUrl(file.path) && file.filename) {
+    return file.filename;
+  }
+  return null;
 };
 
 module.exports = {
