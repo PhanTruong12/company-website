@@ -13,6 +13,40 @@ const DEBUG = import.meta.env.DEV;
 const isCloudinaryUrl = (url: string): boolean =>
   url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
 
+/** Cloudinary cần prefix: c_, q_, f_ — không dùng chữ "fill"/"auto" trần (sẽ 400 Bad Request). */
+function toCloudinaryCrop(crop: string | undefined): string {
+  const key = (crop ?? 'fill').toLowerCase().replace(/^c_/, '');
+  const map: Record<string, string> = {
+    fill: 'c_fill',
+    limit: 'c_limit',
+    fit: 'c_fit',
+    scale: 'c_scale',
+    thumb: 'c_thumb',
+    pad: 'c_pad',
+  };
+  return map[key] ?? `c_${key}`;
+}
+
+function toCloudinaryQuality(q: string | undefined): string {
+  const v = (q ?? 'auto').toLowerCase().replace(/^q_/, '');
+  if (v === 'auto') return 'q_auto';
+  if (/^\d+$/.test(v)) return `q_${v}`;
+  return `q_${v}`;
+}
+
+function toCloudinaryFormat(f: string | undefined): string {
+  const v = (f ?? 'auto').toLowerCase().replace(/^f_/, '');
+  if (v === 'auto') return 'f_auto';
+  const map: Record<string, string> = {
+    webp: 'f_webp',
+    jpg: 'f_jpg',
+    jpeg: 'f_jpg',
+    png: 'f_png',
+    gif: 'f_gif',
+  };
+  return map[v] ?? `f_${v}`;
+}
+
 /**
  * Chèn Cloudinary transformation vào URL (sau /upload/, trước /v123/).
  * Ví dụ: width 400 -> w_400,c_fill,q_auto,f_auto
@@ -21,9 +55,9 @@ function applyCloudinaryTransform(url: string, options: ImageUrlOptions): string
   const parts: string[] = [];
   if (options.width != null) parts.push(`w_${options.width}`);
   if (options.height != null) parts.push(`h_${options.height}`);
-  parts.push(options.crop ?? 'fill');
-  parts.push(options.quality ?? 'auto');
-  parts.push(options.format ?? 'auto');
+  parts.push(toCloudinaryCrop(options.crop));
+  parts.push(toCloudinaryQuality(options.quality));
+  parts.push(toCloudinaryFormat(options.format));
   const transform = parts.join(',');
   return url.replace(/(\/upload\/)/, `$1${transform}/`);
 }
