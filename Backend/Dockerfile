@@ -14,10 +14,9 @@ RUN npm install --omit=dev
 # Copy source code
 COPY . .
 
-# Fix: prevent uploaded images from being removed after deploy
-# Persist uploads outside app source directory.
+# Upload dir (local uploads). Railway: do NOT use Dockerfile VOLUME — add a Volume in the
+# service settings and mount it at /data/uploads. See https://docs.railway.com/reference/volumes
 RUN mkdir -p /data/uploads/interior-images
-VOLUME ["/data/uploads"]
 
 # Expose port (Railway sẽ tự động map port)
 EXPOSE 5000
