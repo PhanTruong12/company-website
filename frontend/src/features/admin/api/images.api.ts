@@ -3,7 +3,9 @@ import axios from 'axios';
 import { adminApiClient, handleApiError, tokenStorage, type ApiResponse, type Pagination } from '../../../core/api/client';
 import type { InteriorImage } from '../../../shared/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { resolveApiBaseUrl } from '../../../utils/apiBaseUrl';
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 /**
  * Create new image (Admin only)

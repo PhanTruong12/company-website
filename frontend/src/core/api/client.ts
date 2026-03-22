@@ -1,8 +1,9 @@
 // core/api/client.ts - Centralized API client configuration
 import axios from 'axios';
 import type { AxiosInstance, AxiosError } from 'axios';
+import { resolveApiBaseUrl } from '../../utils/apiBaseUrl';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = resolveApiBaseUrl();
 
 /**
  * Base API client for public endpoints

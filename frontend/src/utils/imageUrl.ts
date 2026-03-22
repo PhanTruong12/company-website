@@ -2,15 +2,9 @@
 // Hỗ trợ cả Cloudinary URL (kèm transform) và local storage URL
 
 import { publicAsset } from './publicAsset';
+import { resolveApiBaseUrl } from './apiBaseUrl';
 
-// Lấy API base URL từ environment variable (thống nhất VITE_API_BASE_URL)
-const getApiBaseUrl = (): string => {
-  const url = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
-  if (url) return String(url).trim();
-  return import.meta.env.DEV ? 'http://localhost:5000/api' : '';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+const API_BASE_URL = resolveApiBaseUrl();
 const BACKEND_BASE_URL = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : '';
 
 // Debug mode (chỉ log trong development)

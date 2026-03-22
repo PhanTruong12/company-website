@@ -1,7 +1,9 @@
 // search.service.ts - Service để search đá bằng Elasticsearch
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+import { resolveApiBaseUrl } from '../utils/apiBaseUrl';
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Interface cho Search Result
 export interface StoneSearchResult {

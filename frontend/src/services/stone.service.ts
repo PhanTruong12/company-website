@@ -1,7 +1,8 @@
 // stone.service.ts - Service để gọi API Stone Types và Wall Positions
 import axios from 'axios';
+import { resolveApiBaseUrl } from '../utils/apiBaseUrl';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = resolveApiBaseUrl();
 
 // Interface cho Stone Type
 export interface StoneType {
