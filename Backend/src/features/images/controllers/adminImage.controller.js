@@ -24,7 +24,7 @@ const createImage = asyncHandler(async (req, res) => {
  */
 const getImages = asyncHandler(async (req, res) => {
   const { stoneType, wallPosition, page, limit } = req.query;
-  
+
   const filters = { stoneType, wallPosition };
   const pagination = {
     page: parseInt(page) || PAGINATION.DEFAULT_PAGE,
@@ -32,7 +32,7 @@ const getImages = asyncHandler(async (req, res) => {
   };
 
   const { images, pagination: paginationData } = await imageService.getImages(filters, pagination);
-  
+
   return sendPaginated(
     res,
     images,

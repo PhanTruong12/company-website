@@ -180,4 +180,3 @@ export const deleteImage = async (id: string): Promise<void> => {
     throw new Error(error instanceof Error ? error.message : 'Lỗi khi xóa hình ảnh');
   }
 };
-

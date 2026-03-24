@@ -8,10 +8,10 @@
 
 # Environment variables (never commit secrets)
 .env
-frontend/.env
-Backend/.env
-/frontend/.env
-/backend/.env
+.env.*
+!.env.example
+!.env.*.example
+*.env
 
 # Logs
 npm-debug.log*

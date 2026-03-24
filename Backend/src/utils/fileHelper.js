@@ -46,12 +46,12 @@ const deleteFromCloudinary = async (imageUrl) => {
     if (!isCloudinaryUrl(imageUrl)) {
       return false;
     }
-    
+
     const publicId = extractCloudinaryPublicId(imageUrl);
     if (!publicId) {
       return false;
     }
-    
+
     await cloudinary.uploader.destroy(publicId);
     return true;
   } catch (error) {
@@ -66,14 +66,14 @@ const deleteFromCloudinary = async (imageUrl) => {
 const deleteLocalFile = (imageUrl) => {
   try {
     if (!imageUrl) return false;
-    
+
     // Remove leading slash if present
     const normalized = imageUrl.replace(/^\/+/, '');
     const relativeToUploads = normalized.startsWith('uploads/')
       ? normalized.substring('uploads/'.length)
       : normalized;
     const filePath = path.join(uploadRoot, relativeToUploads);
-    
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       return true;
@@ -138,4 +138,3 @@ module.exports = {
   getImageUrl,
   getCloudinaryPublicId
 };
-
