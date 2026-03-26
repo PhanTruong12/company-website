@@ -7,7 +7,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets|uploads|api|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
