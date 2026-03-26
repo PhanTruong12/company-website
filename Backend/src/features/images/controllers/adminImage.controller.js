@@ -3,6 +3,7 @@ const imageService = require('../services/image.service');
 const { sendSuccess, sendPaginated } = require('../../../shared/utils/response');
 const { SUCCESS_MESSAGES, HTTP_STATUS, PAGINATION } = require('../../../shared/constants');
 const asyncHandler = require('../../../core/middleware/asyncHandler');
+const { emitImagesUpdated } = require('../../../realtime/events');
 
 /**
  * Create new image (Admin only)
@@ -10,6 +11,7 @@ const asyncHandler = require('../../../core/middleware/asyncHandler');
  */
 const createImage = asyncHandler(async (req, res) => {
   const image = await imageService.createImage(req.body, req.file);
+  emitImagesUpdated({ action: 'created', image });
   return sendSuccess(
     res,
     image,
@@ -60,6 +62,7 @@ const getImageById = asyncHandler(async (req, res) => {
  */
 const updateImage = asyncHandler(async (req, res) => {
   const image = await imageService.updateImage(req.params.id, req.body, req.file);
+  emitImagesUpdated({ action: 'updated', image });
   return sendSuccess(
     res,
     image,
@@ -72,7 +75,9 @@ const updateImage = asyncHandler(async (req, res) => {
  * DELETE /api/admin/images/:id
  */
 const deleteImage = asyncHandler(async (req, res) => {
-  await imageService.deleteImage(req.params.id);
+  const imageId = req.params.id;
+  await imageService.deleteImage(imageId);
+  emitImagesUpdated({ action: 'deleted', imageId });
   return sendSuccess(
     res,
     null,

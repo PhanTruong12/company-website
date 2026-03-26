@@ -1,9 +1,11 @@
 // server.js - Main application entry point
 const express = require('express');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const { loadEnv } = require('./src/config/env');
 const corsMiddleware = require('./src/config/cors');
+const { initializeSocket } = require('./src/realtime/socket');
 const connectDB = require('./src/config/database');
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
 
@@ -11,6 +13,7 @@ const { errorHandler, notFound } = require('./src/middleware/errorHandler');
 loadEnv();
 
 const app = express();
+const server = http.createServer(app);
 const port = process.env.PORT || 5000;
 
 // ==================== Middleware ====================
@@ -69,6 +72,9 @@ app.use(notFound);
 // Global error handler (must be last)
 app.use(errorHandler);
 
+// Initialize realtime socket server after middleware/routes are configured
+initializeSocket(server);
+
 // ==================== Database Connection ====================
 // Connect to database after setting up routes
 // This ensures server can respond even if database is not connected
@@ -78,7 +84,7 @@ connectDB().catch((error) => {
 });
 
 // ==================== Start Server ====================
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`🚀 Server đang chạy trên cổng: ${port}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Health check: http://localhost:${port}/health`);

@@ -8,4 +8,12 @@ export interface InteriorImage {
   imageUrl: string;
   createdAt: string;
   updatedAt: string;
+  cloudinaryPublicId?: string | null;
 }
+
+/** Payload socket/BroadcastChannel khi CRUD ảnh (đồng bộ realtime) */
+export type ImagesUpdatedPayload =
+  | { action: 'created'; image: InteriorImage; imageId: string; ts: number }
+  | { action: 'updated'; image: InteriorImage; imageId: string; ts: number }
+  | { action: 'deleted'; imageId: string; ts: number }
+  | { action: 'sync'; ts: number };

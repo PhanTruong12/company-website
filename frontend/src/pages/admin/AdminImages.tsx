@@ -1,5 +1,5 @@
 // AdminImages.tsx - Trang quản lý hình ảnh Admin
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authService } from '../../features/admin/lib/auth';
 import type { InteriorImage } from '../../shared/types';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
@@ -8,9 +8,13 @@ import { getImageUrl } from '../../utils/imageUrl';
 import { buildImageFormData } from '../../utils/imageForm';
 import { useImageForm } from '../../hooks/useImageForm';
 import { useAdminImagesCrud } from '../../hooks/useAdminImagesCrud';
+import { AdminPagination } from '../../components/admin/AdminPagination';
 import './AdminImages.css';
 
 const AdminImages = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
+
   const [showModal, setShowModal] = useState(false);
   const [editingImage, setEditingImage] = useState<InteriorImage | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -28,14 +32,24 @@ const AdminImages = () => {
 
   const {
     images,
+    pagination,
     isLoading,
+    isFetching,
     error,
     createImage: createImageAsync,
     updateImage: updateImageAsync,
     deleteImage: deleteImageAsync,
     isCreating,
     isUpdating,
-  } = useAdminImagesCrud();
+  } = useAdminImagesCrud({ page, limit: pageSize });
+
+  useEffect(() => {
+    if (!pagination || pagination.totalPages === 0) return;
+    if (page > pagination.totalPages) {
+      const next = pagination.totalPages;
+      queueMicrotask(() => setPage(next));
+    }
+  }, [pagination, page]);
 
   const handleOpenModal = (image?: InteriorImage) => {
     if (image) {
@@ -124,8 +138,27 @@ const AdminImages = () => {
       {!isLoading && !error && (
         <>
           <div className="admin-images-stats">
-            Tổng số hình ảnh: <strong>{images.length}</strong>
+            Tổng số hình ảnh:{' '}
+            <strong>{pagination?.total ?? images.length}</strong>
+            {isFetching && !isLoading && (
+              <span className="admin-images-refreshing"> · Đang cập nhật…</span>
+            )}
           </div>
+
+          {pagination && pagination.total > 0 && (
+            <AdminPagination
+              page={page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              limit={pageSize}
+              onPageChange={setPage}
+              onLimitChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              disabled={isCreating || isUpdating}
+            />
+          )}
 
           {images.length === 0 ? (
             <div className="admin-empty">Chưa có hình ảnh nào. Hãy thêm hình ảnh mới!</div>

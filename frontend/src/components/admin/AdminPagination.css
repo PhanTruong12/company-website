@@ -1,0 +1,99 @@
+.admin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.admin-pagination-info {
+  font-size: 14px;
+  color: #555;
+}
+
+.admin-pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-pagination-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.admin-pagination-label select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.admin-pagination-label select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #667eea;
+  border-radius: 8px;
+  background: #fff;
+  color: #667eea;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.admin-pagination-btn:hover:not(:disabled) {
+  background: #667eea;
+  color: #fff;
+}
+
+.admin-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #ccc;
+  color: #999;
+}
+
+.admin-pagination-page {
+  font-size: 14px;
+  color: #333;
+  min-width: 100px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .admin-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-pagination-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-pagination-nav {
+    justify-content: center;
+  }
+}

@@ -1,5 +1,5 @@
 // AdminInteriorImages.tsx - Trang Admin quản lý hình ảnh nội thất
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { InteriorImage } from '../shared/types';
 import { useStoneTypes } from '../hooks/useStoneTypes';
 import { WALL_POSITIONS } from '../constants/wallPositions';
@@ -8,9 +8,13 @@ import { publicAsset } from '../utils/publicAsset';
 import { buildImageFormData } from '../utils/imageForm';
 import { useImageForm } from '../hooks/useImageForm';
 import { useAdminImagesCrud } from '../hooks/useAdminImagesCrud';
+import { AdminPagination } from '../components/admin/AdminPagination';
 import './AdminInteriorImages.css';
 
 const AdminInteriorImages = () => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(24);
+
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -32,7 +36,9 @@ const AdminInteriorImages = () => {
 
   const {
     images,
+    pagination,
     isLoading,
+    isFetching,
     error: queryError,
     createImage: createImageAsync,
     updateImage: updateImageAsync,
@@ -40,7 +46,15 @@ const AdminInteriorImages = () => {
     isCreating,
     isUpdating,
     isDeleting,
-  } = useAdminImagesCrud();
+  } = useAdminImagesCrud({ page, limit: pageSize });
+
+  useEffect(() => {
+    if (!pagination || pagination.totalPages === 0) return;
+    if (page > pagination.totalPages) {
+      const next = pagination.totalPages;
+      queueMicrotask(() => setPage(next));
+    }
+  }, [pagination, page]);
 
   // Reset form
   const handleResetForm = () => {
@@ -236,7 +250,26 @@ const AdminInteriorImages = () => {
 
         {/* Danh sách hình ảnh */}
         <div className="admin-list-section">
-          <h2 className="list-title">Danh Sách Hình Ảnh ({images.length})</h2>
+          <h2 className="list-title">
+            Danh Sách Hình Ảnh (
+            {pagination?.total ?? images.length}
+            {isFetching && !isLoading ? ' · …' : ''})
+          </h2>
+
+          {pagination && pagination.total > 0 && (
+            <AdminPagination
+              page={page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              limit={pageSize}
+              onPageChange={setPage}
+              onLimitChange={(n) => {
+                setPageSize(n);
+                setPage(1);
+              }}
+              disabled={isCreating || isUpdating || isDeleting}
+            />
+          )}
 
           {isLoading && !images.length && <div className="loading">Đang tải...</div>}
 

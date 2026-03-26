@@ -44,7 +44,7 @@ export const getImages = async (
   stoneType?: string,
   wallPosition?: string,
   page: number = 1,
-  limit: number = 50
+  limit: number = 24
 ): Promise<{ images: InteriorImage[]; pagination: Pagination }> => {
   try {
     const params: Record<string, string | number> = { page, limit };
@@ -59,10 +59,13 @@ export const getImages = async (
       return {
         images: response.data.data,
         pagination: response.data.pagination || {
-          page: 1,
-          limit: 50,
+          page,
+          limit,
           total: response.data.data.length,
-          totalPages: 1,
+          totalPages:
+            response.data.data.length === 0
+              ? 0
+              : Math.ceil(response.data.data.length / limit),
         },
       };
     }

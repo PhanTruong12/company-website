@@ -38,14 +38,70 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 320px;
+  /* Hai cột: đủ rộng để chia Loại đá | Vị trí ốp */
+  min-width: min(640px, calc(100vw - 32px));
+  max-width: min(880px, calc(100vw - 24px));
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  padding: 16px 0;
+  padding: 0;
   z-index: 1000;
   animation: dropdownFadeIn 0.2s ease-out;
   border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Cuộn dọc phần danh sách; footer “Xem tất cả” luôn hiển thị */
+.showroom-dropdown-scroll {
+  max-height: min(65vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 0 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.showroom-dropdown-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.showroom-dropdown-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+}
+
+.showroom-dropdown-scroll::-webkit-scrollbar-thumb {
+  background: rgba(30, 58, 95, 0.25);
+  border-radius: 4px;
+}
+
+.showroom-dropdown-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 58, 95, 0.4);
+}
+
+/* Hai cột: Loại đá | Vị trí ốp */
+.showroom-dropdown-columns {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  min-height: 0;
+}
+
+.showroom-dropdown-columns .dropdown-section {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.showroom-dropdown-columns .dropdown-section--stone {
+  padding: 0 12px 16px 16px;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.showroom-dropdown-columns .dropdown-section--wall {
+  padding: 0 16px 16px 12px;
 }
 
 @keyframes dropdownFadeIn {
@@ -60,13 +116,13 @@
 }
 
 .dropdown-loading {
-  padding: 24px;
+  padding: 28px 24px;
   text-align: center;
   color: #666;
 }
 
 .dropdown-error {
-  padding: 24px;
+  padding: 28px 24px;
   text-align: center;
   color: #c33;
 }
@@ -88,12 +144,6 @@
 
 .dropdown-section {
   padding: 0 16px 16px;
-}
-
-.dropdown-section:not(:last-child) {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  margin-bottom: 16px;
-  padding-bottom: 16px;
 }
 
 .dropdown-section-title {
@@ -124,6 +174,8 @@
   font-size: 0.95rem;
   border-radius: 6px;
   transition: all 0.2s;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .dropdown-item:hover {
@@ -139,9 +191,11 @@
 }
 
 .dropdown-footer {
-  padding: 12px 16px 0;
+  flex-shrink: 0;
+  padding: 12px 16px 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
-  margin-top: 8px;
+  margin-top: 0;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff 12px);
 }
 
 .dropdown-view-all {
@@ -167,10 +221,29 @@
   .showroom-dropdown-menu {
     position: static;
     min-width: 100%;
+    max-width: 100%;
     margin-top: 8px;
     box-shadow: none;
     border: none;
     background: rgba(0, 0, 0, 0.02);
+  }
+
+  .showroom-dropdown-columns {
+    flex-direction: column;
+  }
+
+  .showroom-dropdown-columns .dropdown-section--stone {
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 0 16px 16px;
+  }
+
+  .showroom-dropdown-columns .dropdown-section--wall {
+    padding: 0 16px 16px;
+  }
+
+  .showroom-dropdown-scroll {
+    max-height: min(50vh, 360px);
   }
 }
 

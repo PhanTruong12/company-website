@@ -5,8 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    include: ['@babylonjs/core', '@babylonjs/loaders'],
-    exclude: [],
+    include: [
+      'react',
+      'react-dom/client',
+      'react/jsx-runtime',
+      '@babylonjs/core',
+      '@babylonjs/loaders',
+    ],
   },
   server: {
     fs: {

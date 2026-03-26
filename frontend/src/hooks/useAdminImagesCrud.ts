@@ -22,6 +22,7 @@ type CrudResult = {
   images: InteriorImage[];
   pagination?: Pagination;
   isLoading: boolean;
+  isFetching: boolean;
   error: unknown;
   refetch: () => void;
   createImage: (formData: FormData) => Promise<InteriorImage>;
@@ -37,7 +38,7 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
     stoneType,
     wallPosition,
     page = 1,
-    limit = 50,
+    limit = 24,
     enabled = authService.isAuthenticated(),
   } = options;
 
@@ -60,9 +61,9 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       }
       return createImage(formData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       invalidate();
-      broadcastImagesUpdated();
+      broadcastImagesUpdated({ action: 'created', image: data });
     },
   });
 
@@ -71,9 +72,9 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       authService.isAuthenticated()
         ? updateImage(id, formData)
         : Promise.reject(new Error('Chưa đăng nhập')),
-    onSuccess: () => {
+    onSuccess: (data) => {
       invalidate();
-      broadcastImagesUpdated();
+      broadcastImagesUpdated({ action: 'updated', image: data });
     },
   });
 
@@ -82,9 +83,9 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
       authService.isAuthenticated()
         ? deleteImage(id)
         : Promise.reject(new Error('Chưa đăng nhập')),
-    onSuccess: () => {
+    onSuccess: (_void, imageId) => {
       invalidate();
-      broadcastImagesUpdated();
+      broadcastImagesUpdated({ action: 'deleted', imageId });
     },
   });
 
@@ -92,6 +93,7 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
     images: imagesQuery.data?.images ?? [],
     pagination: imagesQuery.data?.pagination,
     isLoading: imagesQuery.isLoading,
+    isFetching: imagesQuery.isFetching,
     error: imagesQuery.error,
     refetch: () => imagesQuery.refetch(),
     createImage: (formData: FormData) => createMutation.mutateAsync(formData),

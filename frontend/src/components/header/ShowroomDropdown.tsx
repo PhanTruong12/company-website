@@ -70,50 +70,54 @@ export const ShowroomDropdown = () => {
             </div>
           ) : (
             <>
-              {/* Stone Types Section */}
-              <div className="dropdown-section">
-                <h3 className="dropdown-section-title">Loại Đá</h3>
-                {sortedStoneTypes.length === 0 ? (
-                  <div className="dropdown-empty">Chưa có dữ liệu loại đá</div>
-                ) : (
-                  <ul className="dropdown-list">
-                    {sortedStoneTypes.map((type) => (
-                      <li key={type._id}>
-                        <Link
-                          to={`/showroom?stoneType=${encodeURIComponent(type.name)}`}
-                          className="dropdown-item"
-                          onClick={() => setIsOpen(false)}
-                        >
-                        {type.name}
-                        {type.nameEn && (
-                          <span className="dropdown-item-en"> ({type.nameEn})</span>
-                        )}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <div className="showroom-dropdown-scroll">
+                <div className="showroom-dropdown-columns">
+                  {/* Stone Types Section */}
+                  <div className="dropdown-section dropdown-section--stone">
+                    <h3 className="dropdown-section-title">Loại Đá</h3>
+                    {sortedStoneTypes.length === 0 ? (
+                      <div className="dropdown-empty">Chưa có dữ liệu loại đá</div>
+                    ) : (
+                      <ul className="dropdown-list">
+                        {sortedStoneTypes.map((type) => (
+                          <li key={type._id}>
+                            <Link
+                              to={`/showroom?stoneType=${encodeURIComponent(type.name)}`}
+                              className="dropdown-item"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              {type.name}
+                              {type.nameEn && (
+                                <span className="dropdown-item-en"> ({type.nameEn})</span>
+                              )}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
 
-              {/* Wall Positions Section */}
-              <div className="dropdown-section">
-                <h3 className="dropdown-section-title">Vị Trí Ốp</h3>
-                <ul className="dropdown-list">
-                  {sortedWallPositions.map((position) => (
-                    <li key={position._id}>
-                      <Link
-                        to={`/showroom?wallPosition=${encodeURIComponent(position.name)}`}
-                        className="dropdown-item"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        {position.name}
-                        {position.nameEn && (
-                          <span className="dropdown-item-en"> ({position.nameEn})</span>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                  {/* Wall Positions Section */}
+                  <div className="dropdown-section dropdown-section--wall">
+                    <h3 className="dropdown-section-title">Vị Trí Ốp</h3>
+                    <ul className="dropdown-list">
+                      {sortedWallPositions.map((position) => (
+                        <li key={position._id}>
+                          <Link
+                            to={`/showroom?wallPosition=${encodeURIComponent(position.name)}`}
+                            className="dropdown-item"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            {position.name}
+                            {position.nameEn && (
+                              <span className="dropdown-item-en"> ({position.nameEn})</span>
+                            )}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               {/* View All Link */}

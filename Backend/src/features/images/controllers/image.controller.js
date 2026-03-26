@@ -19,14 +19,29 @@ const createInteriorImage = asyncHandler(async (req, res) => {
 });
 
 /**
- * Get all images (Public - no pagination)
- * GET /api/interior-images
+ * Get images (Public — paginated; default page=1, limit=12)
+ * GET /api/interior-images?page=&limit=&stoneType=&wallPosition=
  */
 const getInteriorImages = asyncHandler(async (req, res) => {
-  const images = await imageService.getAllImages(req.query);
-  return sendSuccess(
+  const { stoneType, wallPosition, page, limit } = req.query;
+  const filters = { stoneType, wallPosition };
+  const pagination = {
+    page: parseInt(page, 10) || PAGINATION.DEFAULT_PAGE,
+    limit: Math.min(
+      parseInt(limit, 10) || 12,
+      PAGINATION.MAX_LIMIT
+    )
+  };
+
+  const { images, pagination: paginationData } = await imageService.getImages(
+    filters,
+    pagination
+  );
+
+  return sendPaginated(
     res,
     images,
+    paginationData,
     SUCCESS_MESSAGES.RETRIEVED('danh sách hình ảnh')
   );
 });
