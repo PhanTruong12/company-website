@@ -42,6 +42,10 @@ const Showroom = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<InteriorImage | null>(null);
+
+  // Refs giúp xử lý realtime mà không phụ thuộc vào closure/state stale.
+  const listMetaRef = useRef<ShowroomListMeta | null>(null);
+  const imagesRef = useRef<InteriorImage[]>([]);
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -82,10 +86,10 @@ const Showroom = () => {
           setImages(data);
         }
         setListMeta({
-          total: pagination.total,
-          page: pagination.page,
-          totalPages: pagination.totalPages,
-          limit: pagination.limit,
+          total: Number(pagination.total ?? 0),
+          page: Number(pagination.page ?? page),
+          totalPages: Number(pagination.totalPages ?? 0),
+          limit: Number(pagination.limit ?? SHOWROOM_PAGE_SIZE),
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
@@ -178,6 +182,15 @@ const Showroom = () => {
     loadFirstPage(finalStoneType, wallPositionFromUrl);
   }, [searchParams, stoneTypes, loadFirstPage]);
 
+  // Sync refs theo state hiện tại
+  useEffect(() => {
+    listMetaRef.current = listMeta;
+  }, [listMeta]);
+
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
   // Load lại images khi user thay đổi filter từ dropdown (không phải từ URL)
   // useEffect này chỉ chạy khi selectedStoneType hoặc selectedWallPosition thay đổi từ user interaction
   // Không chạy khi đã được set từ URL (vì đã load trong useEffect trên)
@@ -224,7 +237,56 @@ const Showroom = () => {
   useEffect(() => {
     const unsubscribe = subscribeImagesUpdated((payload: ImagesUpdatedPayload) => {
       if (payload.action === 'sync') {
-        loadFirstPage(selectedStoneType, selectedWallPosition);
+        const currentMeta = listMetaRef.current;
+        const currentPage = currentMeta?.page ?? 1;
+        const loadedCount = imagesRef.current.length;
+
+        // Nếu user chưa load qua trang 1 (hoặc danh sách còn ít), reset về trang đầu như trước.
+        if (!currentMeta || currentPage <= 1 || loadedCount <= SHOWROOM_PAGE_SIZE) {
+          loadFirstPage(selectedStoneType, selectedWallPosition);
+          return;
+        }
+
+        // Nếu user đã load trang > 1, đừng reset toàn bộ (có thể khiến nút "Xem thêm"
+        // trông như chỉ hoạt động 1 lần). Chỉ refresh page 1 và giữ nguyên "page" hiện tại.
+        (async () => {
+          try {
+            const { images: firstPageImages, pagination } = await getInteriorImages(
+              selectedStoneType || undefined,
+              selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
+              1,
+              SHOWROOM_PAGE_SIZE
+            );
+
+            setImages((prev) => {
+              const byId = new Map(prev.map((i) => [i._id, i]));
+              for (const img of firstPageImages) byId.set(img._id, img);
+              return Array.from(byId.values());
+            });
+
+            setListMeta((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    total: Number(pagination.total ?? prev.total),
+                    totalPages: Number(pagination.totalPages ?? prev.totalPages),
+                    limit: Number(pagination.limit ?? prev.limit),
+                    // Giữ nguyên trang mà user đang xem
+                    page: currentPage,
+                  }
+                : {
+                    total: Number(pagination.total ?? 0),
+                    page: currentPage,
+                    totalPages: Number(pagination.totalPages ?? 0),
+                    limit: Number(pagination.limit ?? SHOWROOM_PAGE_SIZE),
+                  }
+            );
+          } catch {
+            // Fallback: hard reset nếu refresh thất bại
+            loadFirstPage(selectedStoneType, selectedWallPosition);
+          }
+        })();
+
         return;
       }
 
