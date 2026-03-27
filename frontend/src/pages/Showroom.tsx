@@ -120,15 +120,28 @@ const Showroom = () => {
   );
 
   const loadMore = useCallback(() => {
-    if (!listMeta || listMeta.page >= listMeta.totalPages) return;
-    if (loadingMore) return;
+    if (!listMeta || loadingMore) return;
+
+    // Ưu tiên total đã biết để quyết định còn dữ liệu, tránh phụ thuộc hoàn toàn vào totalPages
+    // vì một số backend/filter có thể trả pagination chưa nhất quán.
+    const loadedCount = images.length;
+    if (listMeta.total > 0 && loadedCount >= listMeta.total) return;
+
+    const nextPage = listMeta.page + 1;
     fetchImagesPage(
       selectedStoneType || undefined,
       selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
-      listMeta.page + 1,
+      nextPage,
       true
     );
-  }, [fetchImagesPage, listMeta, loadingMore, selectedStoneType, selectedWallPosition]);
+  }, [
+    fetchImagesPage,
+    images.length,
+    listMeta,
+    loadingMore,
+    selectedStoneType,
+    selectedWallPosition,
+  ]);
 
   // Đọc filter từ URL khi component mount hoặc URL thay đổi
   // Đợi stoneTypes load xong rồi mới match và set state
@@ -203,10 +216,7 @@ const Showroom = () => {
   const handleStoneTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedStoneType(value);
-    
-    // Reset về 12 ảnh đầu khi đổi filter
-    loadFirstPage(value, selectedWallPosition);
-    
+
     // Cập nhật URL params
     const newParams = new URLSearchParams(searchParams);
     if (value) {
@@ -218,7 +228,6 @@ const Showroom = () => {
   };
 
   const syncWallPositions = (next: string[]) => {
-    loadFirstPage(selectedStoneType, next);
     const newParams = new URLSearchParams(searchParams);
     if (next.length > 0) {
       newParams.set('wallPosition', next.join(','));
@@ -355,9 +364,7 @@ const Showroom = () => {
   const clearFilters = () => {
     setSelectedStoneType('');
     setSelectedWallPosition([]);
-    
-    loadFirstPage('', []);
-    
+
     // Xóa tất cả params khỏi URL
     setSearchParams({}, { replace: true });
   };
@@ -446,7 +453,6 @@ const Showroom = () => {
 
   const removeStoneTypeFilter = () => {
     setSelectedStoneType('');
-    loadFirstPage('', selectedWallPosition);
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('stoneType');
     setSearchParams(newParams, { replace: true });
@@ -462,8 +468,8 @@ const Showroom = () => {
 
   const hasMore =
     listMeta !== null &&
-    listMeta.totalPages > 0 &&
-    listMeta.page < listMeta.totalPages;
+    listMeta.total > 0 &&
+    images.length < listMeta.total;
 
   const modalImageIndex =
     selectedImage != null
