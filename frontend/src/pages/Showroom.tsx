@@ -47,6 +47,7 @@ const Showroom = () => {
   // Refs giúp xử lý realtime mà không phụ thuộc vào closure/state stale.
   const listMetaRef = useRef<ShowroomListMeta | null>(null);
   const imagesRef = useRef<InteriorImage[]>([]);
+  const hasInitializedFromUrlRef = useRef(false);
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -60,6 +61,11 @@ const Showroom = () => {
   
   // State cho sắp xếp: 'az' (A-Z), 'za' (Z-A), 'default' (mặc định)
   const [sortOrder, setSortOrder] = useState<'az' | 'za' | 'default'>('az');
+
+  const isSameStringArray = (a: string[], b: string[]): boolean => {
+    if (a.length !== b.length) return false;
+    return a.every((value, idx) => value === b[idx]);
+  };
 
   const fetchImagesPage = useCallback(
     async (
@@ -192,13 +198,22 @@ const Showroom = () => {
       }
     }
     
-    // Set state và load images ngay lập tức
+    const sameStoneType = finalStoneType === selectedStoneType;
+    const sameWallPosition = isSameStringArray(wallPositionFromUrl, selectedWallPosition);
+    const shouldSkipReload =
+      hasInitializedFromUrlRef.current && sameStoneType && sameWallPosition;
+
+    if (shouldSkipReload) return;
+
+    hasInitializedFromUrlRef.current = true;
+
+    // Set state và load images khi URL/filter thực sự thay đổi
     setSelectedStoneType(finalStoneType);
     setSelectedWallPosition(wallPositionFromUrl);
-    
+
     // Load trang đầu (12 ảnh) với giá trị đã được xử lý
     loadFirstPage(finalStoneType, wallPositionFromUrl);
-  }, [searchParams, stoneTypes, loadFirstPage]);
+  }, [searchParams, stoneTypes, loadFirstPage, selectedStoneType, selectedWallPosition]);
 
   // Sync refs theo state hiện tại
   useEffect(() => {
