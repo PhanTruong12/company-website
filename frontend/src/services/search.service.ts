@@ -56,9 +56,8 @@ export const searchStones = async (query: string): Promise<StoneSearchResult[]> 
       return response.data.data;
     }
     return [];
-  } catch (error) {
+  } catch {
     // Không throw error để tránh làm gián đoạn UX
-    console.error('Search error:', error);
     return [];
   }
 };

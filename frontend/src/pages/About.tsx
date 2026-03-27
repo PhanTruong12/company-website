@@ -11,7 +11,7 @@ const About = () => {
           <h1 className="about-h1">Giới thiệu Công Ty TNHH TM & TK Tường Nhà Đẹp</h1>
           <div className="about-hero-image">
             <img 
-              src={publicAsset('collection.jpg')} 
+              src={publicAsset('about1.jpg')} 
               alt="Công trình ốp đá thực tế - Showroom đá nội thất" 
               loading="lazy"
             />
@@ -38,7 +38,7 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src={publicAsset('collection2.jpg')} 
+                src={publicAsset('about2.jpg')} 
                 alt="Đội ngũ thi công chuyên nghiệp - Công trình hoàn thiện" 
                 loading="lazy"
               />
@@ -67,7 +67,7 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src={publicAsset('collection3.jpg')} 
+                src={publicAsset('about3.jpg')} 
                 alt="Quy trình thi công và lắp đặt đá ốp lát" 
                 loading="lazy"
               />
@@ -84,7 +84,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src={publicAsset('collection.jpg')} 
+                  src={publicAsset('granite.jpg')} 
                   alt="Đá Granite - Bền bỉ và sang trọng" 
                   loading="lazy"
                 />
@@ -101,7 +101,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src={publicAsset('collection2.jpg')} 
+                  src={publicAsset('marble.jpg')} 
                   alt="Đá Marble - Tinh tế và đẳng cấp" 
                   loading="lazy"
                 />
@@ -118,7 +118,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src={publicAsset('collection3.jpg')} 
+                  src={publicAsset('nungket2.jpg')} 
                   alt="Đá Nung Kết - Xu hướng vật liệu hiện đại" 
                   loading="lazy"
                 />
@@ -135,7 +135,7 @@ const About = () => {
             <div className="stone-type-item">
               <div className="stone-type-image">
                 <img 
-                  src={publicAsset('collection.jpg')} 
+                  src={publicAsset('thachanh2.jpg')} 
                   alt="Đá Thạch Anh - Thẩm mỹ và độ bền vượt trội" 
                   loading="lazy"
                 />
@@ -171,7 +171,7 @@ const About = () => {
             </div>
             <div className="about-image-wrapper">
               <img 
-                src={publicAsset('collection2.jpg')} 
+                src={publicAsset('tongthe.jpg')} 
                 alt="Công trình hoàn thiện tổng thể - Thi công đá ốp lát" 
                 loading="lazy"
               />

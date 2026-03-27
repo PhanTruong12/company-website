@@ -19,7 +19,6 @@ export const applyGraniteToSurface = (
   ) as Mesh[];
 
   if (meshes.length === 0) {
-    console.warn(`No meshes found with prefix: ${surfacePrefix}`);
     return;
   }
 
@@ -51,5 +50,4 @@ export const applyGraniteToSurface = (
     mesh.material = material;
   });
 
-  console.log(`Applied granite "${granite.name}" to ${meshes.length} mesh(es) with prefix "${surfacePrefix}"`);
 };

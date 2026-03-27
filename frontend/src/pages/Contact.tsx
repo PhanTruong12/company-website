@@ -1,42 +1,9 @@
 // Contact.tsx - Trang Liên hệ công ty
-import { useState } from 'react';
 import { FaPhone, FaMapMarkerAlt, FaEnvelope } from 'react-icons/fa';
+import LeadForm from '../components/LeadForm';
 import './Contact.css';
 
 const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    message: '',
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSubmitStatus('success');
-      setFormData({ name: '', phone: '', email: '', message: '' });
-      
-      setTimeout(() => {
-        setSubmitStatus('idle');
-      }, 5000);
-    }, 1000);
-  };
 
   const googleMapsAddress = "77 Võ Chí Công, Phường Hoà Xuân, Quận Cẩm Lệ, TP Đà Nẵng, Việt Nam";
   const googleMapsEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(googleMapsAddress)}&output=embed&zoom=15`;
@@ -165,86 +132,7 @@ const Contact = () => {
           </div>
 
           {/* Form liên hệ */}
-          <form className="contact-form" onSubmit={handleSubmit}>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="name" className="form-label">
-                  Họ và tên <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="form-input"
-                  required
-                  placeholder="Nhập họ và tên của bạn"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone" className="form-label">
-                  Số điện thoại <span className="required">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="form-input"
-                  required
-                  placeholder="093 578 93 63"
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="your.email@example.com"
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="message" className="form-label">
-                Nội dung tin nhắn <span className="required">*</span>
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                className="form-textarea"
-                rows={5}
-                required
-                placeholder="Mô tả nhu cầu của bạn hoặc đặt câu hỏi..."
-              />
-            </div>
-            {submitStatus === 'success' && (
-              <div className="form-success">
-                Cảm ơn bạn! Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.
-              </div>
-            )}
-            {submitStatus === 'error' && (
-              <div className="form-error">
-                Có lỗi xảy ra. Vui lòng thử lại sau.
-              </div>
-            )}
-            <button 
-              type="submit" 
-              className="form-submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Đang gửi...' : 'Gửi tin nhắn'}
-            </button>
-          </form>
+          <LeadForm />
         </section>
 
         {/* H2 - Vị trí cửa hàng */}

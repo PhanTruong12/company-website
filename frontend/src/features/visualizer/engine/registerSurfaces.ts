@@ -38,7 +38,6 @@ export const registerSurfaceClickHandlers = (scene: Scene): void => {
     if (surfaceType) {
       const { setActiveSurface } = useVisualStore.getState();
       setActiveSurface(surfaceType);
-      console.log(`Surface selected: ${surfaceType} (mesh: ${mesh.name})`);
     }
   });
 };

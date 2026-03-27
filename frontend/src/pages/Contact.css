@@ -398,6 +398,56 @@
   font-size: 0.9375rem;
 }
 
+/* Field-level validation + extra inputs */
+.form-field-error {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: #e53e3e;
+}
+
+.form-file-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-file-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-help-text {
+  font-size: 0.875rem;
+  color: #718096;
+  margin-bottom: 6px;
+}
+
+.form-attachments {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.form-attachments-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.form-attachments-list li {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  word-break: break-word;
+}
+
+
 /* Location Section */
 .location-content {
   margin-bottom: 32px;

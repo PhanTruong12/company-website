@@ -1,5 +1,5 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   getInteriorImages,
@@ -42,6 +42,7 @@ const Showroom = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<InteriorImage | null>(null);
+  const [justAppendedIds, setJustAppendedIds] = useState<Set<string>>(new Set());
 
   // Refs giúp xử lý realtime mà không phụ thuộc vào closure/state stale.
   const listMetaRef = useRef<ShowroomListMeta | null>(null);
@@ -81,6 +82,9 @@ const Showroom = () => {
           SHOWROOM_PAGE_SIZE
         );
         if (append) {
+          const incomingIds = new Set(data.map((i) => i._id));
+          setJustAppendedIds(incomingIds);
+          window.setTimeout(() => setJustAppendedIds(new Set()), 650);
           setImages((prev) => [...prev, ...data]);
         } else {
           setImages(data);
@@ -117,13 +121,14 @@ const Showroom = () => {
 
   const loadMore = useCallback(() => {
     if (!listMeta || listMeta.page >= listMeta.totalPages) return;
+    if (loadingMore) return;
     fetchImagesPage(
       selectedStoneType || undefined,
       selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
       listMeta.page + 1,
       true
     );
-  }, [fetchImagesPage, listMeta, selectedStoneType, selectedWallPosition]);
+  }, [fetchImagesPage, listMeta, loadingMore, selectedStoneType, selectedWallPosition]);
 
   // Đọc filter từ URL khi component mount hoặc URL thay đổi
   // Đợi stoneTypes load xong rồi mới match và set state
@@ -673,11 +678,18 @@ const Showroom = () => {
                   {listMeta?.total ?? sortedImages.length} ảnh
                 </div>
                 <div className="showroom-gallery">
-                  {sortedImages.map((image) => (
+                  {sortedImages.map((image, idx) => (
                     <button
                       key={image._id}
                       type="button"
-                      className="gallery-item"
+                      className={`gallery-item ${
+                        justAppendedIds.has(image._id) ? 'is-new' : ''
+                      }`}
+                      style={
+                        justAppendedIds.has(image._id)
+                          ? ({ ['--enter-delay' as never]: `${Math.min(10, idx) * 35}ms` } as CSSProperties)
+                          : undefined
+                      }
                       onClick={() => setSelectedImage(image)}
                       aria-label={`Xem chi tiết ${image.name}`}
                     >

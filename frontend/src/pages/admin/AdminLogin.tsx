@@ -29,15 +29,13 @@ const AdminLogin = () => {
     try {
       const result = await login(email, password);
       authService.login(result.token);
-      console.log('Login success:', result);
       // Đăng nhập thành công, redirect về trang quản lý hoặc trang trước đó
       const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/internal/admin/images';
       navigate(from, { replace: true });
     } catch (err) {
-      console.error('Login error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Đăng nhập thất bại';
       setError(errorMessage);
-      // Log chi tiết để debug
+      // Friendly message for network issues
       if (err instanceof Error && err.message.includes('Network')) {
         setError('Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.');
       }

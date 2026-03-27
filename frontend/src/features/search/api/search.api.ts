@@ -32,9 +32,8 @@ export const searchStones = async (query: string): Promise<StoneSearchResult[]> 
       return response.data.data;
     }
     return [];
-  } catch (error) {
+  } catch {
     // Don't throw error to avoid disrupting UX
-    console.error('Search error:', error);
     return [];
   }
 };

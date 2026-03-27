@@ -7,9 +7,6 @@ import { resolveApiBaseUrl } from './apiBaseUrl';
 const API_BASE_URL = resolveApiBaseUrl();
 const BACKEND_BASE_URL = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : '';
 
-// Debug mode (chỉ log trong development)
-const DEBUG = import.meta.env.DEV;
-
 const isCloudinaryUrl = (url: string): boolean =>
   url.includes('cloudinary.com') || url.includes('res.cloudinary.com');
 
@@ -86,9 +83,6 @@ export function getImageUrl(
   options?: ImageUrlOptions
 ): string {
   if (!imageUrl) {
-    if (DEBUG) {
-      console.warn('[getImageUrl] No imageUrl provided, using placeholder');
-    }
     return publicAsset('placeholder.jpg');
   }
 
@@ -97,9 +91,6 @@ export function getImageUrl(
   if (isFullUrl) {
     if (options && isCloudinaryUrl(imageUrl)) {
       return applyCloudinaryTransform(imageUrl, options);
-    }
-    if (DEBUG && isFullUrl) {
-      console.log('[getImageUrl] Using external URL:', imageUrl);
     }
     return imageUrl;
   }
