@@ -33,7 +33,8 @@ export const useSubmitLead = () => {
     if (!phone) errors.phone = PHONE_REQUIRED_MESSAGE;
 
     if (phone) {
-      const digits = phone.replace(/\\D/g, '');
+      // \D = mọi ký tự không phải chữ số (khoảng trắng, +, -, v.v.)
+      const digits = phone.replace(/\D/g, '');
       if (digits.length < PHONE_MIN_DIGITS) {
         errors.phone = 'Số điện thoại chưa đúng. Vui lòng kiểm tra lại.';
       }
