@@ -40,6 +40,12 @@ export const Header = () => {
           >
             Liên Hệ
           </Link>
+          <Link
+            to="/blog"
+            className={`nav-link ${isActive('/blog') ? 'active' : ''}`}
+          >
+            Blog
+          </Link>
         </nav>
 
         {/* Right Section: Search + Phone */}

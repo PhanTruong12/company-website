@@ -60,6 +60,26 @@
   gap: 12px;
 }
 
+.admin-panel-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-panel-tab {
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #334155;
+  font-weight: 600;
+}
+
+.admin-panel-tab.active {
+  background: #667eea;
+  color: white;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

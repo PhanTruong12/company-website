@@ -9,6 +9,7 @@ import { buildImageFormData } from '../../utils/imageForm';
 import { useImageForm } from '../../hooks/useImageForm';
 import { useAdminImagesCrud } from '../../hooks/useAdminImagesCrud';
 import { AdminPagination } from '../../components/admin/AdminPagination';
+import { AdminDashboardLayout } from '../../components/admin/AdminDashboardLayout';
 import './AdminImages.css';
 
 const AdminImages = () => {
@@ -113,20 +114,50 @@ const AdminImages = () => {
   };
 
   const errorMessage = error instanceof Error ? error.message : null;
+  const totalImages = pagination?.total ?? images.length;
+  const recentlyUpdated = [...images]
+    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))
+    .slice(0, 5)
+    .map((item) => ({
+      title: item.name,
+      meta: `Cập nhật: ${new Date(item.updatedAt).toLocaleString('vi-VN')}`,
+    }));
 
   return (
-    <div className="admin-images-container">
-      <div className="admin-images-header">
-        <h1>Quản Lý Hình Ảnh Showroom</h1>
-        <div className="admin-images-actions">
-          <button onClick={() => handleOpenModal()} className="btn-primary">
-            + Thêm Ảnh Mới
-          </button>
-          <button onClick={handleLogout} className="btn-secondary">
-            Đăng Xuất
-          </button>
-        </div>
-      </div>
+    <AdminDashboardLayout
+      title="Dashboard Quản Lý Ảnh Showroom"
+      subtitle="Quản trị dữ liệu hình ảnh theo loại đá và vị trí ốp."
+      activeTab="images"
+      onLogout={handleLogout}
+      actions={
+        <button onClick={() => handleOpenModal()} className="btn-primary">
+          + Thêm Ảnh Mới
+        </button>
+      }
+      stats={[
+        { label: 'Tổng ảnh', value: totalImages },
+        { label: 'Trang hiện tại', value: pagination?.page ?? page },
+        { label: 'Số ảnh / trang', value: pageSize },
+      ]}
+      insights={[
+        {
+          title: 'Tỉ lệ lấp đầy trang',
+          value: `${Math.min(100, Math.round((images.length / pageSize) * 100))}%`,
+          tone: 'positive',
+        },
+        {
+          title: 'Tổng số trang',
+          value: pagination?.totalPages ?? 1,
+          tone: 'neutral',
+        },
+        {
+          title: 'Đồng bộ dữ liệu',
+          value: isFetching ? 'Đang cập nhật' : 'Ổn định',
+          tone: isFetching ? 'warning' : 'positive',
+        },
+      ]}
+      activityItems={recentlyUpdated}
+    >
 
       {isLoading && <div className="admin-loading">Đang tải...</div>}
       {errorMessage && (
@@ -342,7 +373,7 @@ const AdminImages = () => {
           </div>
         </div>
       )}
-    </div>
+    </AdminDashboardLayout>
   );
 };
 

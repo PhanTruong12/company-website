@@ -1,13 +1,12 @@
 // imageSync.ts - Đồng bộ hình ảnh giữa Admin và Showroom qua socket + tab local.
-import { io, type Socket } from 'socket.io-client';
 import type { ImagesUpdatedPayload, InteriorImage } from '../shared/types';
+import { getRealtimeSocket, joinRealtimeChannel } from './realtimeSocket';
 
 const CHANNEL_NAME = 'tnd-images-sync';
 const STORAGE_KEY = 'tnd-images-updated';
 const SOCKET_EVENT = 'images:updated';
 const DEDUP_WINDOW_MS = 300;
 
-let socketInstance: Socket | null = null;
 let lastNotifyAt = 0;
 
 const isBrowser = (): boolean =>
@@ -55,33 +54,6 @@ export const normalizeImagesUpdatedPayload = (raw: unknown): ImagesUpdatedPayloa
   }
 
   return { action: 'sync', ts };
-};
-
-const getSocketUrl = (): string => {
-  const explicit = import.meta.env.VITE_SOCKET_URL;
-  if (explicit && String(explicit).trim()) {
-    return String(explicit).trim().replace(/\/+$/, '');
-  }
-
-  const rawBase = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL;
-  const base = rawBase ? String(rawBase).trim() : '';
-  if (!base) {
-    return import.meta.env.DEV ? 'http://localhost:5000' : window.location.origin;
-  }
-
-  return base.replace(/\/+$/, '').replace(/\/api$/i, '');
-};
-
-const getSocket = (): Socket | null => {
-  if (!isBrowser()) return null;
-  if (socketInstance) return socketInstance;
-
-  socketInstance = io(getSocketUrl(), {
-    transports: ['websocket', 'polling'],
-    withCredentials: true
-  });
-
-  return socketInstance;
 };
 
 const buildPayload = (detail?: {
@@ -151,7 +123,8 @@ export const subscribeImagesUpdated = (
   };
 
   let channel: BroadcastChannel | null = null;
-  const socket = getSocket();
+  const socket = getRealtimeSocket();
+  const leaveRoom = joinRealtimeChannel('images');
 
   if ('BroadcastChannel' in window) {
     channel = new BroadcastChannel(CHANNEL_NAME);
@@ -178,6 +151,7 @@ export const subscribeImagesUpdated = (
 
   return () => {
     socket?.off(SOCKET_EVENT, onSocket);
+    leaveRoom();
     if (channel) {
       channel.close();
     }
