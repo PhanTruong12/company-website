@@ -2,6 +2,15 @@ const { Server } = require('socket.io');
 
 let ioInstance = null;
 
+const SOCKET_CHANNELS = {
+  ADMIN: 'admin',
+  IMAGES: 'images',
+  BLOG: 'blog',
+  TRAFFIC: 'traffic',
+};
+
+const isRealtimeEnabled = () => String(process.env.REALTIME_ENABLED ?? 'true').toLowerCase() !== 'false';
+
 const getAllowedOrigins = () => {
   if (process.env.ALLOWED_ORIGINS) {
     return process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim());
@@ -36,6 +45,11 @@ const socketCorsOrigin = (origin, callback) => {
 };
 
 const initializeSocket = (httpServer) => {
+  if (!isRealtimeEnabled()) {
+    ioInstance = null;
+    return null;
+  }
+
   ioInstance = new Server(httpServer, {
     cors: {
       origin: socketCorsOrigin,
@@ -45,6 +59,19 @@ const initializeSocket = (httpServer) => {
   });
 
   ioInstance.on('connection', (socket) => {
+    // Join admin room by convention when client explicitly opts in.
+    socket.on('channel:join', (channel) => {
+      if (typeof channel !== 'string') return;
+      if (!Object.values(SOCKET_CHANNELS).includes(channel)) return;
+      socket.join(channel);
+    });
+
+    socket.on('channel:leave', (channel) => {
+      if (typeof channel !== 'string') return;
+      if (!Object.values(SOCKET_CHANNELS).includes(channel)) return;
+      socket.leave(channel);
+    });
+
     if (process.env.NODE_ENV === 'development') {
       console.log(`🔌 Socket connected: ${socket.id}`);
     }
@@ -62,6 +89,8 @@ const initializeSocket = (httpServer) => {
 const getIO = () => ioInstance;
 
 module.exports = {
+  SOCKET_CHANNELS,
   initializeSocket,
-  getIO
+  getIO,
+  isRealtimeEnabled,
 };

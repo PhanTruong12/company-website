@@ -64,6 +64,8 @@ app.use('/api/stone-types', require('./src/routes/stoneTypeRoutes'));
 app.use('/api/wall-positions', require('./src/routes/wallPositionRoutes'));
 app.use('/api/search', require('./src/routes/searchRoutes'));
 app.use('/api/admin', require('./src/features/admin/routes'));
+app.use('/api/posts', require('./src/routes/postRoutes'));
+app.use('/api/traffic', require('./src/routes/trafficRoutes'));
 
 // ==================== Error Handling ====================
 // 404 handler (must be after all routes)
