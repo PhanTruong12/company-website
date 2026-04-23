@@ -352,6 +352,16 @@
   color: white;
 }
 
+.badge-category {
+  background: linear-gradient(135deg, #0f766e 0%, #2cb67d 100%);
+  color: white;
+}
+
+.badge-empty {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
 .badge-position {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;

@@ -10,16 +10,46 @@ import {
 type PreviewHandler = (previewUrl: string) => void;
 
 export const useImageForm = () => {
+  const toStoneTypeList = (value: InteriorImage['stoneType']) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
+  const toSurfaceList = (value: InteriorImage['be_mat'] | InteriorImage['hang_muc']) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState<ImageFormState>(createEmptyImageForm());
 
   const resetForm = () => {
     setFormData(createEmptyImageForm());
   };
 
+  const resolveSurfaceFromImage = (image: InteriorImage): string =>
+    toSurfaceList(image.be_mat ?? image.hang_muc).join(', ');
+
   const setFromImage = (image: InteriorImage) => {
     setFormData({
       name: image.name,
-      stoneType: image.stoneType,
+      stoneType: toStoneTypeList(image.stoneType),
+      be_mat: resolveSurfaceFromImage(image),
       wallPosition: normalizeWallPositions(image.wallPosition),
       description: image.description,
       image: null,
@@ -61,6 +91,18 @@ export const useImageForm = () => {
     setFormData((prev) => ({ ...prev, wallPosition: positions }));
   };
 
+  const toggleStoneType = (stoneType: string) => {
+    setFormData((prev) => {
+      const exists = prev.stoneType.includes(stoneType);
+      return {
+        ...prev,
+        stoneType: exists
+          ? prev.stoneType.filter((item) => item !== stoneType)
+          : [...prev.stoneType, stoneType],
+      };
+    });
+  };
+
   const toggleWallPosition = (position: string) => {
     setFormData((prev) => {
       const exists = prev.wallPosition.includes(position);
@@ -81,6 +123,7 @@ export const useImageForm = () => {
     handleInputChange,
     handleFileChange,
     setWallPositions,
+    toggleStoneType,
     toggleWallPosition,
   };
 };

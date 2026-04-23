@@ -1,7 +1,8 @@
 // imageForm.ts - Helpers for showroom image CRUD forms
 export type ImageFormState = {
   name: string;
-  stoneType: string;
+  stoneType: string[];
+  be_mat: string;
   wallPosition: string[];
   description: string;
   image: File | null;
@@ -9,11 +10,17 @@ export type ImageFormState = {
 
 export const createEmptyImageForm = (): ImageFormState => ({
   name: '',
-  stoneType: '',
+  stoneType: [],
+  be_mat: '',
   wallPosition: [],
   description: '',
   image: null,
 });
+
+export const normalizeSurfaceValue = (value: string): string =>
+  value
+    .trim()
+    .replace(/\s+/g, ' ');
 
 export const normalizeWallPositions = (
   value: string[] | string | undefined | null
@@ -31,7 +38,8 @@ export const normalizeWallPositions = (
 export const buildImageFormData = (form: ImageFormState): FormData => {
   const data = new FormData();
   data.append('name', form.name);
-  data.append('stoneType', form.stoneType);
+  form.stoneType.forEach((type) => data.append('stoneType', type));
+  data.append('be_mat', normalizeSurfaceValue(form.be_mat));
   form.wallPosition.forEach((position) => data.append('wallPosition', position));
   data.append('description', form.description);
   if (form.image) {

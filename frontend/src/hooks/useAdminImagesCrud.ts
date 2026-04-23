@@ -12,6 +12,7 @@ import { broadcastImagesUpdated } from '../utils/imageSync';
 
 type CrudOptions = {
   stoneType?: string;
+  be_mat?: string;
   wallPosition?: string;
   page?: number;
   limit?: number;
@@ -36,6 +37,7 @@ type CrudResult = {
 export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
   const {
     stoneType,
+    be_mat,
     wallPosition,
     page = 1,
     limit = 24,
@@ -43,11 +45,11 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
   } = options;
 
   const queryClient = useQueryClient();
-  const queryKey = ['admin-images', { stoneType, wallPosition, page, limit }];
+  const queryKey = ['admin-images', { stoneType, be_mat, wallPosition, page, limit }];
 
   const imagesQuery = useQuery({
     queryKey,
-    queryFn: () => getImages(stoneType, wallPosition, page, limit),
+    queryFn: () => getImages(stoneType, be_mat, wallPosition, page, limit),
     enabled,
   });
 
@@ -63,6 +65,7 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
     },
     onSuccess: (data) => {
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ['admin-image-surfaces'] });
       broadcastImagesUpdated({ action: 'created', image: data });
     },
   });
@@ -74,6 +77,7 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
         : Promise.reject(new Error('Chưa đăng nhập')),
     onSuccess: (data) => {
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ['admin-image-surfaces'] });
       broadcastImagesUpdated({ action: 'updated', image: data });
     },
   });
@@ -85,6 +89,7 @@ export const useAdminImagesCrud = (options: CrudOptions = {}): CrudResult => {
         : Promise.reject(new Error('Chưa đăng nhập')),
     onSuccess: (_void, imageId) => {
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ['admin-image-surfaces'] });
       broadcastImagesUpdated({ action: 'deleted', imageId });
     },
   });

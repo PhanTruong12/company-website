@@ -1,5 +1,6 @@
 // AdminImages.tsx - Trang quản lý hình ảnh Admin
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { authService } from '../../features/admin/lib/auth';
 import type { InteriorImage } from '../../shared/types';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
@@ -8,11 +9,34 @@ import { getImageUrl } from '../../utils/imageUrl';
 import { buildImageFormData } from '../../utils/imageForm';
 import { useImageForm } from '../../hooks/useImageForm';
 import { useAdminImagesCrud } from '../../hooks/useAdminImagesCrud';
+import { getImageSurfaces } from '../../features/admin/api';
 import { AdminPagination } from '../../components/admin/AdminPagination';
 import { AdminDashboardLayout } from '../../components/admin/AdminDashboardLayout';
 import './AdminImages.css';
 
 const AdminImages = () => {
+  const toStoneTypeList = (value: InteriorImage['stoneType']): string[] => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof value === 'string') {
+      return value.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+    return [];
+  };
+  const toSurfaceList = (image: InteriorImage): string[] => {
+    const source = image.be_mat ?? image.hang_muc;
+    if (Array.isArray(source)) {
+      return source.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof source === 'string') {
+      return source.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const resolveBeMat = (image: InteriorImage): string =>
+    toSurfaceList(image).join(', ');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
 
@@ -25,11 +49,17 @@ const AdminImages = () => {
     setFromImage,
     handleInputChange,
     handleFileChange,
+    toggleStoneType,
     toggleWallPosition,
   } = useImageForm();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { data: stoneTypes = [] } = useStoneTypes();
+  const { data: beMatOptions = [] } = useQuery({
+    queryKey: ['admin-image-surfaces'],
+    queryFn: getImageSurfaces,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const {
     images,
@@ -78,6 +108,11 @@ const AdminImages = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.stoneType.length === 0) {
+      alert('Vui lòng chọn ít nhất một loại đá.');
+      return;
+    }
 
     const submitFormData = buildImageFormData(formData);
 
@@ -219,7 +254,14 @@ const AdminImages = () => {
                   <div className="admin-image-info">
                     <h3 className="admin-image-title">{image.name}</h3>
                     <div className="admin-image-badges">
-                      <span className="badge badge-stone">{image.stoneType}</span>
+                      {toStoneTypeList(image.stoneType).map((type) => (
+                        <span key={`${image._id}-stone-${type}`} className="badge badge-stone">{type}</span>
+                      ))}
+                      {resolveBeMat(image) ? (
+                        <span className="badge badge-category">{resolveBeMat(image)}</span>
+                      ) : (
+                        <span className="badge badge-category badge-empty">Chưa cập nhật</span>
+                      )}
                       <span className="badge badge-position">
                         {Array.isArray(image.wallPosition)
                           ? image.wallPosition.join(', ')
@@ -281,19 +323,44 @@ const AdminImages = () => {
 
               <div className="admin-form-field">
                 <label>Loại đá *</label>
-                <select
-                  name="stoneType"
-                  value={formData.stoneType}
+                <div className="multi-select">
+                  {stoneTypes.map((type) => {
+                    const selected = formData.stoneType.includes(type.name);
+                    return (
+                      <label
+                        key={type._id}
+                        className={`multi-option ${selected ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          name="stoneType"
+                          value={type.name}
+                          checked={selected}
+                          onChange={() => toggleStoneType(type.name)}
+                        />
+                        <span>{type.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <small className="form-hint">Chọn một hoặc nhiều loại đá phù hợp</small>
+              </div>
+
+              <div className="admin-form-field">
+                <label>Bề mặt</label>
+                <input
+                  type="text"
+                  name="be_mat"
+                  value={formData.be_mat}
                   onChange={handleInputChange}
-                  required
-                >
-                  <option value="">-- Chọn loại đá --</option>
-                  {stoneTypes.map((type) => (
-                    <option key={type._id} value={type.name}>
-                      {type.name}
-                    </option>
+                  list="admin-image-surfaces"
+                  placeholder="Ví dụ: đen nhám, trắng vân mây (ngăn cách bằng dấu phẩy)"
+                />
+                <datalist id="admin-image-surfaces">
+                  {beMatOptions.map((surface) => (
+                    <option key={surface} value={surface} />
                   ))}
-                </select>
+                </datalist>
               </div>
 
               <div className="admin-form-field">

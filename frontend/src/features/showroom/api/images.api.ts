@@ -20,6 +20,7 @@ export type InteriorImagesPageResult = {
  */
 export const getInteriorImages = async (
   stoneType?: string,
+  be_mat?: string,
   wallPosition?: string | string[],
   page: number = 1,
   limit: number = SHOWROOM_PAGE_SIZE
@@ -27,6 +28,7 @@ export const getInteriorImages = async (
   try {
     const params: Record<string, string | number> = { page, limit };
     if (stoneType) params.stoneType = stoneType;
+    if (be_mat) params.be_mat = be_mat;
     if (wallPosition) {
       params.wallPosition = Array.isArray(wallPosition)
         ? wallPosition.join(',')
@@ -53,6 +55,25 @@ export const getInteriorImages = async (
       };
     }
     throw new Error(response.data.message || 'Lỗi khi lấy danh sách hình ảnh');
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Get dynamic surfaces for showroom filter
+ */
+export const getInteriorImageSurfaces = async (): Promise<string[]> => {
+  try {
+    const response = await apiClient.get<ApiResponse<string[]>>('/interior-images/surfaces');
+
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    if (response.data.success) {
+      return [];
+    }
+    throw new Error(response.data.message || 'Lỗi khi lấy danh sách bề mặt');
   } catch (error) {
     throw handleApiError(error);
   }

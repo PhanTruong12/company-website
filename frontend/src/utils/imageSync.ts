@@ -15,7 +15,22 @@ const isBrowser = (): boolean =>
 const normalizeInteriorImage = (raw: Record<string, unknown>): InteriorImage => ({
   _id: String(raw._id ?? ''),
   name: String(raw.name ?? ''),
-  stoneType: String(raw.stoneType ?? ''),
+  stoneType: Array.isArray(raw.stoneType)
+    ? raw.stoneType.map(String)
+    : raw.stoneType != null
+    ? String(raw.stoneType)
+    : null,
+  be_mat:
+    Array.isArray(raw.be_mat)
+      ? raw.be_mat.map(String)
+      : raw.be_mat != null
+      ? String(raw.be_mat)
+      : raw.hang_muc != null
+      ? String(raw.hang_muc)
+      : raw.category != null
+      ? String(raw.category)
+      : null,
+  hang_muc: raw.hang_muc != null ? String(raw.hang_muc) : null,
   wallPosition: Array.isArray(raw.wallPosition)
     ? raw.wallPosition.map(String)
     : [],

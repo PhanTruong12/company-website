@@ -42,6 +42,7 @@ export const createImage = async (formData: FormData): Promise<InteriorImage> =>
  */
 export const getImages = async (
   stoneType?: string,
+  be_mat?: string,
   wallPosition?: string,
   page: number = 1,
   limit: number = 24
@@ -49,6 +50,7 @@ export const getImages = async (
   try {
     const params: Record<string, string | number> = { page, limit };
     if (stoneType) params.stoneType = stoneType;
+    if (be_mat) params.be_mat = be_mat;
     if (wallPosition) params.wallPosition = wallPosition;
 
     const response = await adminApiClient.get<ApiResponse<InteriorImage[]>>('/admin/images', {
@@ -70,6 +72,24 @@ export const getImages = async (
       };
     }
     throw new Error(response.data.message || 'Lỗi khi lấy danh sách hình ảnh');
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Get dynamic surfaces (Admin only)
+ */
+export const getImageSurfaces = async (): Promise<string[]> => {
+  try {
+    const response = await adminApiClient.get<ApiResponse<string[]>>('/admin/images/surfaces');
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    }
+    if (response.data.success) {
+      return [];
+    }
+    throw new Error(response.data.message || 'Lỗi khi lấy danh sách bề mặt');
   } catch (error) {
     throw handleApiError(error);
   }

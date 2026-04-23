@@ -9,7 +9,9 @@ const API_BASE_URL = resolveApiBaseUrl();
 export interface InteriorImage {
   _id: string;
   name: string;
-  stoneType: string;
+  stoneType: string[] | string | null;
+  be_mat?: string[] | string | null;
+  hang_muc?: string | null;
   wallPosition: string[];
   description: string;
   imageUrl: string;

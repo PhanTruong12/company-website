@@ -19,6 +19,8 @@ const makeSlug = (value: string) =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
 
+const MAX_COVER_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
+
 const AdminBlogEditor = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -123,6 +125,11 @@ const AdminBlogEditor = () => {
   const handlePickCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_COVER_IMAGE_SIZE_BYTES) {
+      alert('Ảnh tiêu đề quá lớn (tối đa 2MB). Vui lòng chọn ảnh nhỏ hơn.');
+      event.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result || '');

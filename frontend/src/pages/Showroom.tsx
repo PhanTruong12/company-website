@@ -1,8 +1,11 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
   getInteriorImages,
+  getInteriorImageSurfaces,
   SHOWROOM_PAGE_SIZE,
 } from '../features/showroom/api';
 import type { ImagesUpdatedPayload, InteriorImage } from '../shared/types';
@@ -14,12 +17,35 @@ import { subscribeImagesUpdated } from '../utils/imageSync';
 import './Showroom.css';
 
 /** Khớp bộ lọc showroom với logic filter API (stoneType + wallPosition OR) */
+const getImageSurfaces = (img: InteriorImage): string[] => {
+  const source = img.be_mat ?? img.hang_muc;
+  const raw = Array.isArray(source) ? source : typeof source === 'string' ? source.split(',') : [];
+  const normalizeSurface = (value: string) =>
+    value.trim().replace(/\s+/g, ' ');
+  return raw.map((item) => normalizeSurface(String(item))).filter(Boolean);
+};
+
+const getImageStoneTypes = (img: InteriorImage): string[] => {
+  const source = img.stoneType;
+  const raw = Array.isArray(source) ? source : typeof source === 'string' ? source.split(',') : [];
+  return raw.map((item) => String(item).trim()).filter(Boolean);
+};
+
 const matchesShowroomFilters = (
   img: InteriorImage,
   stoneType: string,
+  beMat: string,
   wallPositions: string[]
 ): boolean => {
-  if (stoneType && img.stoneType !== stoneType) return false;
+  const normalizeSurface = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('vi');
+  const imageBeMatValues = getImageSurfaces(img).map(normalizeSurface);
+  const filterBeMat = normalizeSurface(beMat);
+  if (stoneType) {
+    const stoneTypes = getImageStoneTypes(img);
+    if (!stoneTypes.includes(stoneType)) return false;
+  }
+  if (filterBeMat && !imageBeMatValues.includes(filterBeMat)) return false;
   if (wallPositions.length === 0) return true;
   const imgWalls = Array.isArray(img.wallPosition)
     ? img.wallPosition
@@ -35,6 +61,7 @@ type ShowroomListMeta = {
 };
 
 const Showroom = () => {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [images, setImages] = useState<InteriorImage[]>([]);
   const [listMeta, setListMeta] = useState<ShowroomListMeta | null>(null);
@@ -51,12 +78,18 @@ const Showroom = () => {
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
+  const { data: beMatData = [], isLoading: isLoadingBeMat } = useQuery({
+    queryKey: ['showroom-image-surfaces'],
+    queryFn: getInteriorImageSurfaces,
+    staleTime: 30 * 1000,
+  });
   // Sử dụng trực tiếp data từ API (đã có name và slug từ backend)
   const stoneTypes = stoneTypesData;
   const wallPositions = WALL_POSITIONS;
 
   // Đọc filter từ URL params - khởi tạo với giá trị từ URL
   const [selectedStoneType, setSelectedStoneType] = useState<string>('');
+  const [selectedBeMat, setSelectedBeMat] = useState<string>('');
   const [selectedWallPosition, setSelectedWallPosition] = useState<string[]>([]);
   
   // State cho sắp xếp: 'az' (A-Z), 'za' (Z-A), 'default' (mặc định)
@@ -70,6 +103,7 @@ const Showroom = () => {
   const fetchImagesPage = useCallback(
     async (
       stoneType: string | undefined,
+      be_mat: string | undefined,
       wallPosition: string[] | undefined,
       page: number,
       append: boolean
@@ -83,6 +117,7 @@ const Showroom = () => {
       try {
         const { images: data, pagination } = await getInteriorImages(
           stoneType || undefined,
+          be_mat || undefined,
           wallPosition && wallPosition.length > 0 ? wallPosition : undefined,
           page,
           SHOWROOM_PAGE_SIZE
@@ -112,11 +147,12 @@ const Showroom = () => {
   );
 
   const loadFirstPage = useCallback(
-    (stoneType?: string, wallPosition?: string[]) => {
+    (stoneType?: string, be_mat?: string, wallPosition?: string[]) => {
       setImages([]);
       setListMeta(null);
       return fetchImagesPage(
         stoneType,
+        be_mat,
         wallPosition && wallPosition.length > 0 ? wallPosition : undefined,
         1,
         false
@@ -136,6 +172,7 @@ const Showroom = () => {
     const nextPage = listMeta.page + 1;
     fetchImagesPage(
       selectedStoneType || undefined,
+      selectedBeMat || undefined,
       selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
       nextPage,
       true
@@ -146,6 +183,7 @@ const Showroom = () => {
     listMeta,
     loadingMore,
     selectedStoneType,
+    selectedBeMat,
     selectedWallPosition,
   ]);
 
@@ -153,6 +191,7 @@ const Showroom = () => {
   // Đợi stoneTypes load xong rồi mới match và set state
   useEffect(() => {
     const stoneTypeFromUrl = searchParams.get('stoneType') || '';
+    const beMatFromUrl = searchParams.get('be_mat') || searchParams.get('hang_muc') || '';
     const decodeQueryValue = (value: string) =>
       decodeURIComponent(value.replace(/\+/g, ' '));
 
@@ -199,9 +238,10 @@ const Showroom = () => {
     }
     
     const sameStoneType = finalStoneType === selectedStoneType;
+    const sameBeMat = beMatFromUrl === selectedBeMat;
     const sameWallPosition = isSameStringArray(wallPositionFromUrl, selectedWallPosition);
     const shouldSkipReload =
-      hasInitializedFromUrlRef.current && sameStoneType && sameWallPosition;
+      hasInitializedFromUrlRef.current && sameStoneType && sameBeMat && sameWallPosition;
 
     if (shouldSkipReload) return;
 
@@ -209,11 +249,12 @@ const Showroom = () => {
 
     // Set state và load images khi URL/filter thực sự thay đổi
     setSelectedStoneType(finalStoneType);
+    setSelectedBeMat(beMatFromUrl);
     setSelectedWallPosition(wallPositionFromUrl);
 
     // Load trang đầu (12 ảnh) với giá trị đã được xử lý
-    loadFirstPage(finalStoneType, wallPositionFromUrl);
-  }, [searchParams, stoneTypes, loadFirstPage, selectedStoneType, selectedWallPosition]);
+    loadFirstPage(finalStoneType, beMatFromUrl, wallPositionFromUrl);
+  }, [searchParams, stoneTypes, loadFirstPage, selectedStoneType, selectedBeMat, selectedWallPosition]);
 
   // Sync refs theo state hiện tại
   useEffect(() => {
@@ -252,6 +293,20 @@ const Showroom = () => {
     setSearchParams(newParams, { replace: true });
   };
 
+  const handleBeMatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedBeMat(value);
+
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set('be_mat', value);
+    } else {
+      newParams.delete('be_mat');
+      newParams.delete('hang_muc');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+
   const toggleWallPosition = (position: string) => {
     setSelectedWallPosition((prev) => {
       const next = prev.includes(position)
@@ -272,7 +327,7 @@ const Showroom = () => {
 
         // Nếu user chưa load qua trang 1 (hoặc danh sách còn ít), reset về trang đầu như trước.
         if (!currentMeta || currentPage <= 1 || loadedCount <= SHOWROOM_PAGE_SIZE) {
-          loadFirstPage(selectedStoneType, selectedWallPosition);
+          loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
           return;
         }
 
@@ -282,6 +337,7 @@ const Showroom = () => {
           try {
             const { images: firstPageImages, pagination } = await getInteriorImages(
               selectedStoneType || undefined,
+              selectedBeMat || undefined,
               selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
               1,
               SHOWROOM_PAGE_SIZE
@@ -312,7 +368,7 @@ const Showroom = () => {
             );
           } catch {
             // Fallback: hard reset nếu refresh thất bại
-            loadFirstPage(selectedStoneType, selectedWallPosition);
+            loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
           }
         })();
 
@@ -326,12 +382,13 @@ const Showroom = () => {
         setListMeta((prev) =>
           prev ? { ...prev, total: Math.max(0, prev.total - 1) } : prev
         );
+        queryClient.invalidateQueries({ queryKey: ['showroom-image-surfaces'] });
         return;
       }
 
       const img = payload.image;
       if (payload.action === 'created') {
-        if (!matchesShowroomFilters(img, selectedStoneType, selectedWallPosition)) {
+        if (!matchesShowroomFilters(img, selectedStoneType, selectedBeMat, selectedWallPosition)) {
           return;
         }
         setImages((prev) => {
@@ -341,14 +398,17 @@ const Showroom = () => {
         setListMeta((prev) =>
           prev ? { ...prev, total: prev.total + 1 } : prev
         );
+        queryClient.invalidateQueries({ queryKey: ['showroom-image-surfaces'] });
         return;
       }
 
       if (payload.action === 'updated') {
+        queryClient.invalidateQueries({ queryKey: ['showroom-image-surfaces'] });
         setImages((prev) => {
           const matches = matchesShowroomFilters(
             img,
             selectedStoneType,
+            selectedBeMat,
             selectedWallPosition
           );
           const idx = prev.findIndex((i) => i._id === img._id);
@@ -366,7 +426,7 @@ const Showroom = () => {
       }
     });
     return unsubscribe;
-  }, [loadFirstPage, selectedStoneType, selectedWallPosition]);
+  }, [loadFirstPage, queryClient, selectedStoneType, selectedBeMat, selectedWallPosition]);
 
   // Giữ modal chi tiết khớp bản ghi trong danh sách sau khi merge realtime
   useEffect(() => {
@@ -378,6 +438,7 @@ const Showroom = () => {
 
   const clearFilters = () => {
     setSelectedStoneType('');
+    setSelectedBeMat('');
     setSelectedWallPosition([]);
 
     // Xóa tất cả params khỏi URL
@@ -412,6 +473,9 @@ const Showroom = () => {
   );
   
   const sortedWallPositions = [...wallPositions].sort((a, b) => 
+    a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
+  );
+  const sortedBeMat = [...beMatData].sort((a, b) =>
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
   const filteredWallPositions = sortedWallPositions;
@@ -479,7 +543,15 @@ const Showroom = () => {
     syncWallPositions(next);
   };
 
-  const hasActiveFilters = !!selectedStoneType || selectedWallPosition.length > 0;
+  const removeBeMatFilter = () => {
+    setSelectedBeMat('');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('be_mat');
+    newParams.delete('hang_muc');
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const hasActiveFilters = !!selectedStoneType || !!selectedBeMat || selectedWallPosition.length > 0;
 
   const hasMore =
     listMeta !== null &&
@@ -529,6 +601,25 @@ const Showroom = () => {
                   <option value="az">A - Z</option>
                   <option value="za">Z - A</option>
                   <option value="default">Mặc định</option>
+                </select>
+              </div>
+              <div className="filter-field">
+                <label htmlFor="be_mat">Bề mặt</label>
+                <select
+                  id="be_mat"
+                  value={selectedBeMat}
+                  onChange={handleBeMatChange}
+                >
+                  <option value="">Tất cả</option>
+                  {isLoadingBeMat ? (
+                    <option disabled>Đang tải...</option>
+                  ) : (
+                    sortedBeMat.map((beMat) => (
+                      <option key={beMat} value={beMat}>
+                        {beMat}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
               <div className="filter-row-positions">
@@ -604,6 +695,20 @@ const Showroom = () => {
                       </span>
                     </button>
                   )}
+                  {selectedBeMat && (
+                    <button
+                      type="button"
+                      className="filter-active-chip"
+                      onClick={removeBeMatFilter}
+                      aria-label={`Bỏ lọc bề mặt ${selectedBeMat}`}
+                    >
+                      <span className="filter-active-chip-label">Bề mặt</span>
+                      <span className="filter-active-chip-value">{selectedBeMat}</span>
+                      <span className="filter-active-chip-remove" aria-hidden>
+                        ×
+                      </span>
+                    </button>
+                  )}
                   {selectedWallPosition.map((position) => (
                     <button
                       key={position}
@@ -634,7 +739,7 @@ const Showroom = () => {
                 type="button"
                 className="showroom-toast-retry"
                 onClick={() =>
-                  loadFirstPage(selectedStoneType, selectedWallPosition)
+                  loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition)
                 }
               >
                 Thử lại
@@ -682,11 +787,11 @@ const Showroom = () => {
                 </div>
                 <p className="showroom-empty-title">Không có ảnh phù hợp</p>
                 <p className="showroom-empty-hint">
-                  {selectedStoneType || selectedWallPosition.length > 0
+                  {selectedStoneType || selectedBeMat || selectedWallPosition.length > 0
                     ? 'Thử đổi loại đá hoặc vị trí ốp, hoặc xem toàn bộ thư viện.'
                     : 'Hiện chưa có ảnh nào trong thư viện. Vui lòng quay lại sau.'}
                 </p>
-                {(selectedStoneType || selectedWallPosition.length > 0) && (
+                {(selectedStoneType || selectedBeMat || selectedWallPosition.length > 0) && (
                   <button type="button" onClick={clearFilters} className="btn-clear-filters">
                     Xem tất cả hình ảnh
                   </button>
@@ -728,7 +833,12 @@ const Showroom = () => {
                           <div className="gallery-info">
                             <h3 className="gallery-title">{image.name}</h3>
                             <p className="gallery-meta">
-                              <span className="gallery-tag">{image.stoneType}</span>
+                              {getImageStoneTypes(image).map((type) => (
+                                <span key={`${image._id}-stone-${type}`} className="gallery-tag">{type}</span>
+                              ))}
+                              {getImageSurfaces(image).map((surface) => (
+                                <span key={`${image._id}-${surface}`} className="gallery-tag">{surface}</span>
+                              ))}
                               <span className="gallery-tag">
                                 {Array.isArray(image.wallPosition)
                                   ? image.wallPosition.join(', ')
@@ -811,7 +921,12 @@ const Showroom = () => {
               <div className="image-modal-info">
                 <h3 className="image-modal-title">{selectedImage.name}</h3>
                 <div className="image-modal-meta">
-                  <span className="image-modal-tag">{selectedImage.stoneType}</span>
+                  {getImageStoneTypes(selectedImage).map((type) => (
+                    <span key={`${selectedImage._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
+                  ))}
+                  {getImageSurfaces(selectedImage).map((surface) => (
+                    <span key={`${selectedImage._id}-${surface}`} className="image-modal-tag">{surface}</span>
+                  ))}
                   <span className="image-modal-tag">
                     {Array.isArray(selectedImage.wallPosition)
                       ? selectedImage.wallPosition.join(', ')
