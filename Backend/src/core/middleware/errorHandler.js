@@ -47,6 +47,12 @@ const errorHandler = (err, req, res, next) => {
     error = new AppError(message, HTTP_STATUS.UNAUTHORIZED);
   }
 
+  // Payload too large (Express body-parser)
+  if (err.type === 'entity.too.large' || err.status === HTTP_STATUS.PAYLOAD_TOO_LARGE) {
+    const message = 'Dữ liệu gửi lên quá lớn. Vui lòng giảm kích thước ảnh hoặc nội dung.';
+    error = new AppError(message, HTTP_STATUS.PAYLOAD_TOO_LARGE);
+  }
+
   // Send error response
   const statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const message = error.message || 'Internal Server Error';

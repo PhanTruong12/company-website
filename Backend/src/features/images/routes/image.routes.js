@@ -5,6 +5,7 @@ const upload = require('../../../core/middleware/uploadMiddleware');
 const {
   createInteriorImage,
   getInteriorImages,
+  getInteriorImageSurfaces,
   getInteriorImageById,
   updateInteriorImage,
   deleteInteriorImage
@@ -19,6 +20,11 @@ router.post('/', upload.single('image'), createInteriorImage);
  * GET /api/interior-images
  */
 router.get('/', getInteriorImages);
+
+/**
+ * GET /api/interior-images/surfaces
+ */
+router.get('/surfaces', getInteriorImageSurfaces);
 
 /**
  * GET /api/interior-images/:id

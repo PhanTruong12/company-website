@@ -13,14 +13,112 @@ const normalizeWallPositions = (value) => {
     .filter(Boolean);
 };
 
+const normalizeStoneTypeDisplay = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ');
+};
+
+const normalizeStoneTypeKey = (value) =>
+  normalizeStoneTypeDisplay(value).toLocaleLowerCase('vi');
+
+const splitStoneTypeValues = (value) => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  return raw
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+    .map(normalizeStoneTypeDisplay)
+    .filter(Boolean);
+};
+
+const dedupeStoneTypes = (values) => {
+  const byKey = new Map();
+  values.forEach((item) => {
+    const key = normalizeStoneTypeKey(item);
+    if (!key) return;
+    if (!byKey.has(key)) {
+      byKey.set(key, item);
+    }
+  });
+  return [...byKey.values()];
+};
+
+const getStoneTypesFromInput = (data = {}) => {
+  const list = splitStoneTypeValues(data.stoneTypes ?? data.stoneType);
+  return dedupeStoneTypes(list);
+};
+
+const getStoneTypesFromImage = (image = {}) => {
+  const list = splitStoneTypeValues(image.stoneType);
+  return dedupeStoneTypes(list);
+};
+
+const normalizeSurfaceDisplay = (value) => {
+  if (typeof value !== 'string') return '';
+  return value
+    .trim()
+    .replace(/\s+/g, ' ');
+};
+
+const normalizeSurfaceKey = (value) =>
+  normalizeSurfaceDisplay(value).toLocaleLowerCase('vi');
+
+const splitSurfaceValues = (value) => {
+  if (!value) return [];
+  const raw = Array.isArray(value) ? value : [value];
+  return raw
+    .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+    .map(normalizeSurfaceDisplay)
+    .filter(Boolean);
+};
+
+const dedupeSurfaces = (values) => {
+  const byKey = new Map();
+  values.forEach((item) => {
+    const key = normalizeSurfaceKey(item);
+    if (!key) return;
+    if (!byKey.has(key)) {
+      byKey.set(key, item);
+    }
+  });
+  return [...byKey.values()];
+};
+
+const getSurfacesFromInput = (data = {}) => {
+  const surfaces = splitSurfaceValues(data.be_mat ?? data.hang_muc ?? data.category);
+  return dedupeSurfaces(surfaces);
+};
+
+const getSurfacesFromImage = (image = {}) => {
+  const surfaces = splitSurfaceValues(image.be_mat ?? image.hang_muc ?? image.category);
+  return dedupeSurfaces(surfaces);
+};
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const mapImageOutput = (doc) => {
+  if (!doc) return doc;
+  const image = typeof doc.toObject === 'function' ? doc.toObject() : { ...doc };
+  const stoneType = getStoneTypesFromImage(image);
+  const be_mat = getSurfacesFromImage(image);
+  return {
+    ...image,
+    stoneType: stoneType.length > 0 ? stoneType : null,
+    be_mat: be_mat.length > 0 ? be_mat : null
+  };
+};
+
 /**
  * Create new interior image
  */
 const createImage = async (data, file) => {
-  const { name, stoneType, description } = data;
+  const { name, description } = data;
+  const stoneType = getStoneTypesFromInput(data);
+  const stoneType_norm = stoneType.map(normalizeStoneTypeKey).filter(Boolean);
+  const be_mat = getSurfacesFromInput(data);
+  const be_mat_norm = be_mat.map(normalizeSurfaceKey).filter(Boolean);
   const wallPositions = normalizeWallPositions(data.wallPositions ?? data.wallPosition);
 
-  if (!name || !stoneType || wallPositions.length === 0) {
+  if (!name || stoneType.length === 0 || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
@@ -35,6 +133,9 @@ const createImage = async (data, file) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
+      stoneType_norm,
+      be_mat,
+      be_mat_norm,
       wallPosition: wallPositions,
       description: description || '',
       imageUrl,
@@ -42,7 +143,7 @@ const createImage = async (data, file) => {
     });
 
     await interiorImage.save();
-    return interiorImage;
+    return mapImageOutput(interiorImage);
   } catch (error) {
     // Delete uploaded file if there's an error
     if (file && imageUrl) {
@@ -56,11 +157,40 @@ const createImage = async (data, file) => {
  * Get images with filters and pagination
  */
 const getImages = async (filters = {}, pagination = {}) => {
-  const { stoneType, wallPosition } = filters;
+  const { wallPosition } = filters;
+  const stoneType = normalizeStoneTypeDisplay(filters.stoneType);
+  const stoneType_norm = stoneType ? normalizeStoneTypeKey(stoneType) : '';
+  const be_mat = normalizeSurfaceDisplay(filters.be_mat ?? filters.hang_muc ?? filters.category);
+  const be_mat_norm = be_mat ? normalizeSurfaceKey(be_mat) : '';
   const { page = 1, limit = 10 } = pagination;
 
   const filter = {};
-  if (stoneType) filter.stoneType = stoneType;
+  if (stoneType_norm) {
+    const fallbackRegex = new RegExp(`^${escapeRegex(stoneType)}$`, 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { stoneType_norm: stoneType_norm },
+          { stoneType: fallbackRegex }
+        ]
+      }
+    ];
+  }
+  if (be_mat_norm) {
+    const fallbackRegex = new RegExp(`^${escapeRegex(be_mat)}$`, 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { be_mat_norm: be_mat_norm },
+          { be_mat: fallbackRegex },
+          { hang_muc: fallbackRegex },
+          { category: fallbackRegex }
+        ]
+      }
+    ];
+  }
   if (wallPosition) {
     const positions = normalizeWallPositions(wallPosition);
     if (positions.length === 1) {
@@ -78,7 +208,7 @@ const getImages = async (filters = {}, pagination = {}) => {
     .limit(parseInt(limit));
 
   return {
-    images,
+    images: images.map(mapImageOutput),
     pagination: {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -92,10 +222,39 @@ const getImages = async (filters = {}, pagination = {}) => {
  * Get all images (no pagination) - for public API
  */
 const getAllImages = async (filters = {}) => {
-  const { stoneType, wallPosition } = filters;
+  const { wallPosition } = filters;
+  const stoneType = normalizeStoneTypeDisplay(filters.stoneType);
+  const stoneType_norm = stoneType ? normalizeStoneTypeKey(stoneType) : '';
+  const be_mat = normalizeSurfaceDisplay(filters.be_mat ?? filters.hang_muc ?? filters.category);
+  const be_mat_norm = be_mat ? normalizeSurfaceKey(be_mat) : '';
   const filter = {};
 
-  if (stoneType) filter.stoneType = stoneType;
+  if (stoneType_norm) {
+    const fallbackRegex = new RegExp(`^${escapeRegex(stoneType)}$`, 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { stoneType_norm: stoneType_norm },
+          { stoneType: fallbackRegex }
+        ]
+      }
+    ];
+  }
+  if (be_mat_norm) {
+    const fallbackRegex = new RegExp(`^${escapeRegex(be_mat)}$`, 'i');
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { be_mat_norm: be_mat_norm },
+          { be_mat: fallbackRegex },
+          { hang_muc: fallbackRegex },
+          { category: fallbackRegex }
+        ]
+      }
+    ];
+  }
   if (wallPosition) {
     const positions = normalizeWallPositions(wallPosition);
     if (positions.length === 1) {
@@ -106,7 +265,7 @@ const getAllImages = async (filters = {}) => {
   }
 
   const images = await InteriorImage.find(filter).sort({ createdAt: -1 });
-  return images;
+  return images.map(mapImageOutput);
 };
 
 /**
@@ -117,14 +276,18 @@ const getImageById = async (id) => {
   if (!image) {
     throw new NotFoundError(ERROR_MESSAGES.RESOURCE_NOT_FOUND('Hình ảnh'));
   }
-  return image;
+  return mapImageOutput(image);
 };
 
 /**
  * Update image
  */
 const updateImage = async (id, data, file) => {
-  const { name, stoneType, description } = data;
+  const { name, description } = data;
+  const stoneType = getStoneTypesFromInput(data);
+  const stoneType_norm = stoneType.map(normalizeStoneTypeKey).filter(Boolean);
+  const be_mat = getSurfacesFromInput(data);
+  const be_mat_norm = be_mat.map(normalizeSurfaceKey).filter(Boolean);
   const wallPositions = normalizeWallPositions(data.wallPositions ?? data.wallPosition);
 
   const image = await InteriorImage.findById(id);
@@ -132,13 +295,16 @@ const updateImage = async (id, data, file) => {
     throw new NotFoundError(ERROR_MESSAGES.RESOURCE_NOT_FOUND('Hình ảnh'));
   }
 
-  if (!name || !stoneType || wallPositions.length === 0) {
+  if (!name || stoneType.length === 0 || wallPositions.length === 0) {
     throw new BadRequestError(ERROR_MESSAGES.MISSING_REQUIRED_FIELDS);
   }
 
   // Update fields
   image.name = name;
   image.stoneType = stoneType;
+  image.stoneType_norm = stoneType_norm;
+  image.be_mat = be_mat;
+  image.be_mat_norm = be_mat_norm;
   image.wallPosition = wallPositions;
   if (description !== undefined) {
     image.description = description;
@@ -163,7 +329,7 @@ const updateImage = async (id, data, file) => {
   }
 
   await image.save();
-  return image;
+  return mapImageOutput(image);
 };
 
 /**
@@ -185,10 +351,29 @@ const deleteImage = async (id) => {
   return true;
 };
 
+const getSurfaces = async () => {
+  const [fromBeMat, fromHangMuc, fromCategory] = await Promise.all([
+    InteriorImage.distinct('be_mat'),
+    InteriorImage.distinct('hang_muc'),
+    InteriorImage.distinct('category')
+  ]);
+  const deduped = new Map();
+  [...fromBeMat, ...fromHangMuc, ...fromCategory].forEach((value) => {
+    splitSurfaceValues(value).forEach((display) => {
+      const key = normalizeSurfaceKey(display);
+      if (!deduped.has(key)) {
+        deduped.set(key, display);
+      }
+    });
+  });
+  return [...deduped.values()].sort((a, b) => a.localeCompare(b, 'vi'));
+};
+
 module.exports = {
   createImage,
   getImages,
   getAllImages,
+  getSurfaces,
   getImageById,
   updateImage,
   deleteImage

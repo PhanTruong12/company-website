@@ -6,6 +6,7 @@ const upload = require('../../../core/middleware/uploadMiddleware');
 const {
   createImage,
   getImages,
+  getSurfaces,
   getImageById,
   updateImage,
   deleteImage
@@ -20,6 +21,11 @@ router.post('/', verifyAdminToken, upload.single('image'), createImage);
  * GET /api/admin/images
  */
 router.get('/', verifyAdminToken, getImages);
+
+/**
+ * GET /api/admin/images/surfaces
+ */
+router.get('/surfaces', verifyAdminToken, getSurfaces);
 
 /**
  * GET /api/admin/images/:id

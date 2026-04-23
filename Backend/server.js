@@ -22,8 +22,9 @@ const port = process.env.PORT || 5000;
 app.use(corsMiddleware);
 
 // Body parser
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const requestBodyLimit = process.env.REQUEST_BODY_LIMIT || '10mb';
+app.use(express.json({ limit: requestBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 
 // Serve static files
 // Fix: prevent uploaded images from being removed after deploy

@@ -1,6 +1,24 @@
 // database.js
 const mongoose = require('mongoose');
 
+const dropInvalidParallelArrayIndexes = async (conn) => {
+  try {
+    const collection = conn.connection.collection('interiorimages');
+    const indexes = await collection.indexes();
+    for (const idx of indexes) {
+      const keys = Object.keys(idx.key || {});
+      const arrayLikeKeys = ['wallPosition', 'be_mat', 'be_mat_norm', 'stoneType', 'stoneType_norm'];
+      const arrayKeyCount = keys.filter((key) => arrayLikeKeys.includes(key)).length;
+      if (arrayKeyCount > 1) {
+        await collection.dropIndex(idx.name);
+        console.log(`🧹 Dropped invalid index: ${idx.name}`);
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️  Could not auto-clean legacy indexes:', error.message);
+  }
+};
+
 const connectDB = async () => {
   try {
     // Kiểm tra MONGODB_URI có tồn tại không
@@ -35,6 +53,7 @@ const connectDB = async () => {
 
         console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
         console.log(`   Database: ${conn.connection.name}`);
+        await dropInvalidParallelArrayIndexes(conn);
         return; // Thành công, thoát khỏi function
       } catch (error) {
         lastError = error;

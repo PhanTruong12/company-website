@@ -16,12 +16,18 @@ const normalizeWallPositions = (value) => {
     .filter(Boolean);
 };
 
+const normalizeSurface = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('vi');
+};
+
 /**
  * Create new image (Admin only)
  * POST /api/admin/images
  */
 const createImage = async (req, res) => {
   const { name, stoneType, description } = req.body;
+  const be_mat = normalizeSurface(req.body.be_mat ?? req.body.hang_muc ?? req.body.category);
   const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
   // Validation
@@ -42,6 +48,7 @@ const createImage = async (req, res) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
+      be_mat: be_mat || null,
       wallPosition: wallPositions,
       description: description || '',
       imageUrl,
@@ -72,10 +79,14 @@ const createImage = async (req, res) => {
  */
 const getImages = async (req, res) => {
   const { stoneType, wallPosition, page, limit } = req.query;
+  const be_mat = normalizeSurface(req.query.be_mat ?? req.query.hang_muc ?? req.query.category);
   const filter = {};
 
   // Add filters if provided
   if (stoneType) filter.stoneType = stoneType;
+  if (be_mat) {
+    filter.$or = [{ be_mat }, { hang_muc: be_mat }, { category: be_mat }];
+  }
   if (wallPosition) {
     const positions = normalizeWallPositions(wallPosition);
     if (positions.length === 1) {
@@ -132,6 +143,7 @@ const getImageById = async (req, res) => {
 const updateImage = async (req, res) => {
   const { id } = req.params;
   const { name, stoneType, description } = req.body;
+  const be_mat = normalizeSurface(req.body.be_mat ?? req.body.hang_muc ?? req.body.category);
   const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
   // Find image
@@ -149,6 +161,7 @@ const updateImage = async (req, res) => {
   // Update fields
   image.name = name;
   image.stoneType = stoneType;
+  image.be_mat = be_mat || null;
   image.wallPosition = wallPositions;
   if (description !== undefined) {
     image.description = description;

@@ -8,8 +8,36 @@ const interiorImageSchema = new mongoose.Schema({
     trim: true
   },
   stoneType: {
-    type: String,
+    type: [String],
     required: [true, 'Loại đá ốp tường là bắt buộc'],
+    default: [],
+    validate: {
+      validator: (value) => Array.isArray(value) && value.length > 0,
+      message: 'Loại đá ốp tường là bắt buộc'
+    }
+  },
+  stoneType_norm: {
+    type: [String],
+    default: []
+  },
+  be_mat: {
+    type: [String],
+    default: []
+  },
+  be_mat_norm: {
+    type: [String],
+    default: []
+  },
+  // Fallback for backward compatibility with legacy data.
+  hang_muc: {
+    type: String,
+    default: null,
+    trim: true
+  },
+  // Legacy field from previous version; keep temporary for safe rollout.
+  category: {
+    type: String,
+    default: null,
     trim: true
   },
   wallPosition: {
@@ -41,8 +69,10 @@ const interiorImageSchema = new mongoose.Schema({
 
 // Indexes để tối ưu query
 interiorImageSchema.index({ stoneType: 1 });
+interiorImageSchema.index({ stoneType_norm: 1 });
+interiorImageSchema.index({ be_mat: 1 });
+interiorImageSchema.index({ be_mat_norm: 1 });
 interiorImageSchema.index({ wallPosition: 1 });
-interiorImageSchema.index({ stoneType: 1, wallPosition: 1 });
 
 const InteriorImage = mongoose.model('InteriorImage', interiorImageSchema);
 

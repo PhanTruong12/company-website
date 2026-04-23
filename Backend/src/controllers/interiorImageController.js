@@ -13,6 +13,11 @@ const normalizeWallPositions = (value) => {
     .filter(Boolean);
 };
 
+const normalizeSurface = (value) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('vi');
+};
+
 /**
  * Tạo hình ảnh mới
  * POST /api/interior-images
@@ -21,6 +26,7 @@ const createInteriorImage = async (req, res) => {
   try {
     // Validate dữ liệu
     const { name, stoneType, description } = req.body;
+    const be_mat = normalizeSurface(req.body.be_mat ?? req.body.hang_muc ?? req.body.category);
     const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
     if (!name || !stoneType || wallPositions.length === 0) {
@@ -44,6 +50,7 @@ const createInteriorImage = async (req, res) => {
     const interiorImage = new InteriorImage({
       name,
       stoneType,
+      be_mat: be_mat || null,
       wallPosition: wallPositions,
       description: description || '',
       imageUrl
@@ -79,11 +86,15 @@ const createInteriorImage = async (req, res) => {
 const getInteriorImages = async (req, res) => {
   try {
     const { stoneType, wallPosition } = req.query;
+    const be_mat = normalizeSurface(req.query.be_mat ?? req.query.hang_muc ?? req.query.category);
     const filter = {};
 
     // Thêm filter nếu có
     if (stoneType) {
       filter.stoneType = stoneType;
+    }
+    if (be_mat) {
+      filter.$or = [{ be_mat }, { hang_muc: be_mat }, { category: be_mat }];
     }
     if (wallPosition) {
       const positions = normalizeWallPositions(wallPosition);
@@ -149,6 +160,7 @@ const updateInteriorImage = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, stoneType, description } = req.body;
+    const be_mat = normalizeSurface(req.body.be_mat ?? req.body.hang_muc ?? req.body.category);
     const wallPositions = normalizeWallPositions(req.body.wallPositions ?? req.body.wallPosition);
 
     // Tìm hình ảnh
@@ -172,6 +184,7 @@ const updateInteriorImage = async (req, res) => {
     // Cập nhật thông tin
     image.name = name;
     image.stoneType = stoneType;
+    image.be_mat = be_mat || null;
     image.wallPosition = wallPositions;
     if (description !== undefined) {
       image.description = description;

@@ -25,9 +25,9 @@ const createImage = asyncHandler(async (req, res) => {
  * GET /api/admin/images
  */
 const getImages = asyncHandler(async (req, res) => {
-  const { stoneType, wallPosition, page, limit } = req.query;
+  const { stoneType, wallPosition, be_mat, hang_muc, category, page, limit } = req.query;
 
-  const filters = { stoneType, wallPosition };
+  const filters = { stoneType, wallPosition, be_mat, hang_muc, category };
   const pagination = {
     page: parseInt(page) || PAGINATION.DEFAULT_PAGE,
     limit: Math.min(parseInt(limit) || PAGINATION.DEFAULT_LIMIT, PAGINATION.MAX_LIMIT)
@@ -40,6 +40,19 @@ const getImages = asyncHandler(async (req, res) => {
     images,
     paginationData,
     SUCCESS_MESSAGES.RETRIEVED('danh sách hình ảnh')
+  );
+});
+
+/**
+ * Get all dynamic surfaces (Admin only)
+ * GET /api/admin/images/surfaces
+ */
+const getSurfaces = asyncHandler(async (_req, res) => {
+  const surfaces = await imageService.getSurfaces();
+  return sendSuccess(
+    res,
+    surfaces,
+    SUCCESS_MESSAGES.RETRIEVED('danh sách bề mặt')
   );
 });
 
@@ -88,6 +101,7 @@ const deleteImage = asyncHandler(async (req, res) => {
 module.exports = {
   createImage,
   getImages,
+  getSurfaces,
   getImageById,
   updateImage,
   deleteImage

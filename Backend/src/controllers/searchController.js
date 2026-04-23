@@ -59,13 +59,19 @@ const searchStones = async (req, res) => {
     const searchRegex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     const searchRegexNoTones = new RegExp(queryNoTones.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
 
-    // Search trong name, stoneType, wallPosition
+    // Search trong name, stoneType, be_mat/hang_muc và wallPosition
     const results = await InteriorImage.find({
       $or: [
         { name: searchRegex },
         { name: { $regex: queryNoTones, $options: 'i' } },
         { stoneType: searchRegex },
         { stoneType: { $regex: queryNoTones, $options: 'i' } },
+        { be_mat: searchRegex },
+        { be_mat: { $regex: queryNoTones, $options: 'i' } },
+        { hang_muc: searchRegex },
+        { hang_muc: { $regex: queryNoTones, $options: 'i' } },
+        { category: searchRegex },
+        { category: { $regex: queryNoTones, $options: 'i' } },
         { wallPosition: searchRegex },
         { wallPosition: { $regex: queryNoTones, $options: 'i' } },
         { description: searchRegex }
@@ -79,6 +85,7 @@ const searchStones = async (req, res) => {
       _id: item._id.toString(),
       name: item.name,
       stoneType: item.stoneType,
+      be_mat: item.be_mat || item.hang_muc || item.category || null,
       wallPosition: item.wallPosition,
       imageUrl: item.imageUrl,
       slug: createSlug(item.name)

@@ -20,6 +20,7 @@
     "prod:local": "cross-env NODE_ENV=production node server.js",
     "seed": "node src/utils/seed.js",
     "migrate:atlas": "node scripts/migrate-to-atlas.js",
+    "migrate:be-mat": "node scripts/migrate-be-mat.js",
     "migrate:cloudinary": "node src/utils/migrateToCloudinary.js",
     "migrate:cloudinary:dry": "node src/utils/migrateToCloudinary.js --dry-run",
     "generate:jwt-secret": "node src/utils/generateJWTSecret.js",

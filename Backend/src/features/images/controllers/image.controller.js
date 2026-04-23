@@ -23,8 +23,8 @@ const createInteriorImage = asyncHandler(async (req, res) => {
  * GET /api/interior-images?page=&limit=&stoneType=&wallPosition=
  */
 const getInteriorImages = asyncHandler(async (req, res) => {
-  const { stoneType, wallPosition, page, limit } = req.query;
-  const filters = { stoneType, wallPosition };
+  const { stoneType, wallPosition, be_mat, hang_muc, category, page, limit } = req.query;
+  const filters = { stoneType, wallPosition, be_mat, hang_muc, category };
   const pagination = {
     page: parseInt(page, 10) || PAGINATION.DEFAULT_PAGE,
     limit: Math.min(
@@ -43,6 +43,19 @@ const getInteriorImages = asyncHandler(async (req, res) => {
     images,
     paginationData,
     SUCCESS_MESSAGES.RETRIEVED('danh sách hình ảnh')
+  );
+});
+
+/**
+ * Get all dynamic surfaces (Public)
+ * GET /api/interior-images/surfaces
+ */
+const getInteriorImageSurfaces = asyncHandler(async (_req, res) => {
+  const surfaces = await imageService.getSurfaces();
+  return sendSuccess(
+    res,
+    surfaces,
+    SUCCESS_MESSAGES.RETRIEVED('danh sách bề mặt')
   );
 });
 
@@ -88,6 +101,7 @@ const deleteInteriorImage = asyncHandler(async (req, res) => {
 module.exports = {
   createInteriorImage,
   getInteriorImages,
+  getInteriorImageSurfaces,
   getInteriorImageById,
   updateInteriorImage,
   deleteInteriorImage
