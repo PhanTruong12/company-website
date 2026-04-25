@@ -90,15 +90,12 @@ exports.deletePost = asyncHandler(async (req, res) => {
 exports.reactPost = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { type } = req.body;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new BadRequestError('ID bài viết không hợp lệ');
-  }
 
   if (!['like', 'dislike'].includes(type)) {
     throw new BadRequestError('type phải là like hoặc dislike');
   }
 
-  const post = await Post.findById(id);
+  const post = await findPostByIdOrSlug(Post, id);
   if (!post) {
     throw new NotFoundError('Bài viết không tồn tại');
   }
