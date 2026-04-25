@@ -29,7 +29,8 @@ const postSchema = new mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      maxlength: [1000, 'URL ảnh tiêu đề quá dài'],
+      // Cho phép cả URL và data URL (base64) từ trang admin editor.
+      maxlength: [3_000_000, 'Ảnh tiêu đề quá lớn'],
     },
     views: {
       type: Number,
@@ -51,5 +52,9 @@ const postSchema = new mongoose.Schema(
 );
 
 postSchema.index({ title: 'text', content: 'text' });
+postSchema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { slug: { $type: 'string', $ne: '' } } }
+);
 
 module.exports = mongoose.model('Post', postSchema);

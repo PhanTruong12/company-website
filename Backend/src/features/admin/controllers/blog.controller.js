@@ -4,14 +4,7 @@ const { sendSuccess } = require('../../../shared/utils/response');
 const { HTTP_STATUS } = require('../../../shared/constants');
 const { BadRequestError, NotFoundError } = require('../../../shared/utils/errors/AppError');
 const { emitPostsUpdated } = require('../../../realtime/events');
-
-const normalizeSlug = (value = '') =>
-  String(value)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+const { createUniquePostSlug } = require('../../../utils/postSlug');
 
 exports.getPosts = async (req, res, next) => {
   try {
@@ -31,7 +24,7 @@ exports.createPost = async (req, res, next) => {
 
     const post = await Post.create({
       title: title.trim(),
-      slug: normalizeSlug(slug || title),
+      slug: await createUniquePostSlug(Post, slug || title),
       description: typeof description === 'string' ? description.trim() : '',
       content: content.trim(),
       coverImage: typeof coverImage === 'string' ? coverImage.trim() : '',
@@ -58,7 +51,9 @@ exports.updatePost = async (req, res, next) => {
 
     const { title, slug, description, content, coverImage } = req.body;
     if (title != null) post.title = String(title).trim();
-    if (slug != null || title != null) post.slug = normalizeSlug(slug || post.title);
+    if (slug != null || title != null) {
+      post.slug = await createUniquePostSlug(Post, slug || post.title, post._id);
+    }
     if (description != null) post.description = String(description).trim();
     if (content != null) post.content = String(content).trim();
     if (coverImage != null) post.coverImage = String(coverImage).trim();

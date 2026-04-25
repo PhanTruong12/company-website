@@ -5,14 +5,7 @@ const { sendSuccess } = require('../utils/response');
 const { HTTP_STATUS } = require('../constants');
 const { BadRequestError, NotFoundError } = require('../utils/errors/AppError');
 const { emitPostsUpdated } = require('../realtime/events');
-
-const normalizeSlug = (value = '') =>
-  String(value)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+const { createUniquePostSlug, findPostByIdOrSlug } = require('../utils/postSlug');
 
 const mapPost = (postDoc) => {
   const post = postDoc.toObject ? postDoc.toObject() : postDoc;
@@ -27,11 +20,7 @@ exports.getPosts = asyncHandler(async (req, res) => {
 
 exports.getPostById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new BadRequestError('ID bài viết không hợp lệ');
-  }
-
-  const post = await Post.findById(id);
+  const post = await findPostByIdOrSlug(Post, id);
   if (!post) {
     throw new NotFoundError('Bài viết không tồn tại');
   }
@@ -51,7 +40,7 @@ exports.createPost = asyncHandler(async (req, res) => {
 
   const created = await Post.create({
     title,
-    slug: normalizeSlug(slug || title),
+    slug: await createUniquePostSlug(Post, slug || title),
     description: typeof description === 'string' ? description.trim() : '',
     content,
     coverImage: typeof coverImage === 'string' ? coverImage.trim() : '',
@@ -72,7 +61,9 @@ exports.updatePost = asyncHandler(async (req, res) => {
   if (!post) throw new NotFoundError('Bài viết không tồn tại');
 
   if (title) post.title = title;
-  if (slug != null || title != null) post.slug = normalizeSlug(slug || post.title);
+  if (slug != null || title != null) {
+    post.slug = await createUniquePostSlug(Post, slug || post.title, post._id);
+  }
   if (description != null) post.description = String(description).trim();
   if (content) post.content = content;
   if (coverImage != null) post.coverImage = String(coverImage).trim();
