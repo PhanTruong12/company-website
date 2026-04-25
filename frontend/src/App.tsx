@@ -12,6 +12,12 @@ const AppContent = () => {
   const shouldHideHeaderFooter = isAdminRoute(location.pathname);
 
   useEffect(() => {
+    // Mỗi lần chuyển route, đưa viewport về đầu trang để UX nhất quán.
+    if (location.hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname, location.search, location.hash]);
+
+  useEffect(() => {
     if (isAdminRoute(location.pathname)) return;
     const pathWithQuery = `${location.pathname}${location.search}`;
     trackPageView(pathWithQuery);

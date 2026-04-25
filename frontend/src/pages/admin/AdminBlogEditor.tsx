@@ -4,7 +4,12 @@ import Quill from 'quill';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { authService } from '../../features/admin/lib/auth';
 import { AdminDashboardLayout } from '../../components/admin/AdminDashboardLayout';
-import { createAdminBlog, getAdminBlogs, updateAdminBlog } from '../../features/admin/api';
+import {
+  createAdminBlog,
+  getAdminBlogs,
+  updateAdminBlog,
+  type AdminBlogPost,
+} from '../../features/admin/api';
 import { subscribeBlogUpdated } from '../../utils/blogSync';
 import './AdminBlogs.css';
 import 'quill/dist/quill.snow.css';
@@ -21,29 +26,30 @@ const makeSlug = (value: string) =>
 
 const MAX_COVER_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
 
-const AdminBlogEditor = () => {
+type BlogEditorFormProps = {
+  initialBlog: AdminBlogPost | null;
+  blogId: string | undefined;
+  isEditMode: boolean;
+};
+
+const BlogEditorForm = ({ initialBlog, blogId, isEditMode }: BlogEditorFormProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { id } = useParams<{ id: string }>();
-  const isEditMode = Boolean(id);
-  const [formData, setFormData] = useState({ title: '', slug: '', description: '', content: '', coverImage: '' });
+  const [formData, setFormData] = useState(() => ({
+    title: initialBlog?.title ?? '',
+    slug: initialBlog?.slug ?? '',
+    description: initialBlog?.description ?? '',
+    content: initialBlog?.content ?? '',
+    coverImage: initialBlog?.coverImage ?? '',
+  }));
   const [inlineImageUrl, setInlineImageUrl] = useState('');
   const [showQuickImageInsert, setShowQuickImageInsert] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
-  const [coverPreview, setCoverPreview] = useState('');
+  const [coverPreview, setCoverPreview] = useState(initialBlog?.coverImage ?? '');
+  const [submitError, setSubmitError] = useState('');
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<Quill | null>(null);
-
-  const blogsQuery = useQuery({
-    queryKey: ['admin-blogs'],
-    queryFn: getAdminBlogs,
-  });
-
-  const editingBlog = useMemo(() => {
-    if (!id) return null;
-    return (blogsQuery.data ?? []).find((item) => item._id === id) ?? null;
-  }, [blogsQuery.data, id]);
 
   useEffect(() => {
     if (!editorContainerRef.current || quillRef.current) return;
@@ -72,25 +78,6 @@ const AdminBlogEditor = () => {
   }, []);
 
   useEffect(() => {
-    if (editingBlog) {
-      setFormData({
-        title: editingBlog.title,
-        slug: editingBlog.slug ?? '',
-        description: editingBlog.description ?? '',
-        content: editingBlog.content,
-        coverImage: editingBlog.coverImage ?? '',
-      });
-      setCoverPreview(editingBlog.coverImage ?? '');
-    }
-  }, [editingBlog]);
-
-  useEffect(() => {
-    if (!slugTouched && formData.title) {
-      setFormData((prev) => ({ ...prev, slug: makeSlug(prev.title) }));
-    }
-  }, [formData.title, slugTouched]);
-
-  useEffect(() => {
     if (!quillRef.current) return;
     if (quillRef.current.root.innerHTML !== formData.content) {
       quillRef.current.root.innerHTML = formData.content || '';
@@ -103,9 +90,15 @@ const AdminBlogEditor = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: { title: string; slug?: string; description?: string; content: string; coverImage?: string }) => {
-      if (!id) throw new Error('Thiếu ID blog');
-      return updateAdminBlog(id, payload);
+    mutationFn: (payload: {
+      title: string;
+      slug?: string;
+      description?: string;
+      content: string;
+      coverImage?: string;
+    }) => {
+      if (!blogId) throw new Error('Thiếu ID blog');
+      return updateAdminBlog(blogId, payload);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-blogs'] }),
   });
@@ -142,15 +135,141 @@ const AdminBlogEditor = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) return;
+    setSubmitError('');
 
-    if (isEditMode) {
-      await updateMutation.mutateAsync(formData);
-    } else {
-      await createMutation.mutateAsync(formData);
+    try {
+      if (isEditMode) {
+        await updateMutation.mutateAsync(formData);
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
+      navigate('/internal/admin/blogs');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Không thể lưu bài viết');
     }
-
-    navigate('/internal/admin/blogs');
   };
+
+  return (
+    <div className="admin-blog-editor-shell">
+      <form onSubmit={handleSubmit} className="admin-blog-editor-form">
+        <section className="admin-blog-editor-card">
+          <h3 className="admin-blog-section-title">Thông tin bài viết</h3>
+          <div className="admin-blog-form-grid">
+            <div className="admin-form-field">
+              <label>Tên bài viết</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => {
+                  const title = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    title,
+                    ...(!slugTouched && title ? { slug: makeSlug(title) } : {}),
+                  }));
+                }}
+                required
+              />
+            </div>
+            <div className="admin-form-field">
+              <label>Slug</label>
+              <input
+                type="text"
+                value={formData.slug}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setFormData((prev) => ({ ...prev, slug: makeSlug(e.target.value) }));
+                }}
+              />
+            </div>
+          </div>
+          <div className="admin-form-field">
+            <label>Mô tả</label>
+            <input
+              type="text"
+              value={formData.description}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Mô tả ngắn hiển thị ở danh sách bài viết"
+            />
+          </div>
+        </section>
+
+        <section className="admin-blog-editor-card">
+          <h3 className="admin-blog-section-title">Ảnh đại diện</h3>
+          <div className="admin-form-field">
+            <label>Ảnh (tùy chọn)</label>
+            <div className="admin-cover-dropzone">
+              {coverPreview ? <img src={coverPreview} alt="Ảnh bìa" className="admin-cover-preview" /> : null}
+              <button type="button" className="btn-secondary admin-cover-picker-btn" onClick={() => imageInputRef.current?.click()}>
+                Chọn ảnh
+              </button>
+              <input ref={imageInputRef} type="file" accept="image/*" onChange={handlePickCover} className="admin-hidden-file" />
+            </div>
+            <small className="admin-form-hint">Bạn có thể bỏ qua mục này nếu bài viết chỉ cần tiêu đề và nội dung chữ.</small>
+          </div>
+        </section>
+
+        <section className="admin-blog-editor-card">
+          <h3 className="admin-blog-section-title">Nội dung</h3>
+          <div className="admin-form-field">
+            <label>Nội dung bài viết</label>
+            <div className="admin-quill-editor" ref={editorContainerRef} />
+            <small className="admin-form-hint">Editor hỗ trợ chèn link, ảnh, video ngay trên toolbar.</small>
+          </div>
+          <div className="admin-form-field">
+            <label>Chèn ảnh URL nhanh vào nội dung (Tùy chọn)</label>
+            <button
+              type="button"
+              className="btn-secondary admin-optional-toggle"
+              onClick={() => setShowQuickImageInsert((prev) => !prev)}
+            >
+              {showQuickImageInsert ? 'Ẩn mục này' : 'Mở mục tùy chọn'}
+            </button>
+            {showQuickImageInsert ? (
+              <div className="admin-inline-image-tool">
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={inlineImageUrl}
+                  onChange={(e) => setInlineImageUrl(e.target.value)}
+                />
+                <button type="button" className="btn-secondary" onClick={insertInlineImage}>
+                  + Chèn vào nội dung
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <div className="admin-modal-actions">
+          <Link to="/internal/admin/blogs" className="btn-secondary">
+            Hủy
+          </Link>
+          <button type="submit" className="btn-primary" disabled={isSaving}>
+            {isSaving ? 'Đang lưu...' : isEditMode ? 'Cập nhật bài viết' : 'Thêm bài viết'}
+          </button>
+        </div>
+        {submitError ? <div className="admin-error">{submitError}</div> : null}
+      </form>
+    </div>
+  );
+};
+
+const AdminBlogEditor = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { id } = useParams<{ id: string }>();
+  const isEditMode = Boolean(id);
+
+  const blogsQuery = useQuery({
+    queryKey: ['admin-blogs'],
+    queryFn: getAdminBlogs,
+  });
+
+  const editingBlog = useMemo(() => {
+    if (!id) return null;
+    return (blogsQuery.data ?? []).find((item) => item._id === id) ?? null;
+  }, [blogsQuery.data, id]);
 
   const handleLogout = () => {
     authService.logout();
@@ -186,100 +305,12 @@ const AdminBlogEditor = () => {
       {isNotFound && <div className="admin-error">Không tìm thấy bài blog cần chỉnh sửa.</div>}
 
       {(!isEditMode || editingBlog) && (
-        <div className="admin-blog-editor-shell">
-          <form onSubmit={handleSubmit} className="admin-blog-editor-form">
-            <section className="admin-blog-editor-card">
-              <h3 className="admin-blog-section-title">Thông tin bài viết</h3>
-              <div className="admin-blog-form-grid">
-                <div className="admin-form-field">
-                  <label>Tên bài viết</label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="admin-form-field">
-                  <label>Slug</label>
-                  <input
-                    type="text"
-                    value={formData.slug}
-                    onChange={(e) => {
-                      setSlugTouched(true);
-                      setFormData((prev) => ({ ...prev, slug: makeSlug(e.target.value) }));
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="admin-form-field">
-                <label>Mô tả</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Mô tả ngắn hiển thị ở danh sách bài viết"
-                />
-              </div>
-            </section>
-
-            <section className="admin-blog-editor-card">
-              <h3 className="admin-blog-section-title">Ảnh đại diện</h3>
-              <div className="admin-form-field">
-                <label>Ảnh (tùy chọn)</label>
-                <div className="admin-cover-dropzone">
-                  {coverPreview ? <img src={coverPreview} alt="Ảnh bìa" className="admin-cover-preview" /> : null}
-                  <button type="button" className="btn-secondary admin-cover-picker-btn" onClick={() => imageInputRef.current?.click()}>
-                    Chọn ảnh
-                  </button>
-                  <input ref={imageInputRef} type="file" accept="image/*" onChange={handlePickCover} className="admin-hidden-file" />
-                </div>
-                <small className="admin-form-hint">Bạn có thể bỏ qua mục này nếu bài viết chỉ cần tiêu đề và nội dung chữ.</small>
-              </div>
-            </section>
-
-            <section className="admin-blog-editor-card">
-              <h3 className="admin-blog-section-title">Nội dung</h3>
-              <div className="admin-form-field">
-                <label>Nội dung bài viết</label>
-                <div className="admin-quill-editor" ref={editorContainerRef} />
-                <small className="admin-form-hint">Editor hỗ trợ chèn link, ảnh, video ngay trên toolbar.</small>
-              </div>
-              <div className="admin-form-field">
-                <label>Chèn ảnh URL nhanh vào nội dung (Tùy chọn)</label>
-                <button
-                  type="button"
-                  className="btn-secondary admin-optional-toggle"
-                  onClick={() => setShowQuickImageInsert((prev) => !prev)}
-                >
-                  {showQuickImageInsert ? 'Ẩn mục này' : 'Mở mục tùy chọn'}
-                </button>
-                {showQuickImageInsert ? (
-                  <div className="admin-inline-image-tool">
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={inlineImageUrl}
-                      onChange={(e) => setInlineImageUrl(e.target.value)}
-                    />
-                    <button type="button" className="btn-secondary" onClick={insertInlineImage}>
-                      + Chèn vào nội dung
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </section>
-
-            <div className="admin-modal-actions">
-              <Link to="/internal/admin/blogs" className="btn-secondary">
-                Hủy
-              </Link>
-              <button type="submit" className="btn-primary" disabled={isSaving}>
-                {isSaving ? 'Đang lưu...' : isEditMode ? 'Cập nhật bài viết' : 'Thêm bài viết'}
-              </button>
-            </div>
-          </form>
-        </div>
+        <BlogEditorForm
+          key={isEditMode ? String(id) : 'new'}
+          initialBlog={editingBlog}
+          blogId={id}
+          isEditMode={isEditMode}
+        />
       )}
     </AdminDashboardLayout>
   );

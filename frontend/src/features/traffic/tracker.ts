@@ -9,25 +9,61 @@ type TrafficEvent = {
 const SESSION_KEY = 'traffic_session_id';
 const PAGEVIEW_THROTTLE_MS = 30_000;
 const CLICK_THROTTLE_MS = 3_000;
+const memoryStore = new Map<string, string>();
+
+const canUseSessionStorage = (): boolean => {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return false;
+    const probeKey = '__traffic_storage_probe__';
+    window.sessionStorage.setItem(probeKey, '1');
+    window.sessionStorage.removeItem(probeKey);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const readStorage = (key: string): string | null => {
+  if (canUseSessionStorage()) {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      // Fall through to in-memory store when browser blocks storage access.
+    }
+  }
+  return memoryStore.get(key) ?? null;
+};
+
+const writeStorage = (key: string, value: string) => {
+  if (canUseSessionStorage()) {
+    try {
+      window.sessionStorage.setItem(key, value);
+      return;
+    } catch {
+      // Fall through to in-memory store when browser blocks storage access.
+    }
+  }
+  memoryStore.set(key, value);
+};
 
 const getSessionId = () => {
-  const existing = sessionStorage.getItem(SESSION_KEY);
+  const existing = readStorage(SESSION_KEY);
   if (existing) return existing;
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  sessionStorage.setItem(SESSION_KEY, id);
+  writeStorage(SESSION_KEY, id);
   return id;
 };
 
 const shouldTrackNow = (key: string, ttl: number) => {
   const now = Date.now();
-  const raw = sessionStorage.getItem(key);
+  const raw = readStorage(key);
   if (!raw) {
-    sessionStorage.setItem(key, String(now));
+    writeStorage(key, String(now));
     return true;
   }
   const previous = Number(raw);
   if (!Number.isFinite(previous) || now - previous > ttl) {
-    sessionStorage.setItem(key, String(now));
+    writeStorage(key, String(now));
     return true;
   }
   return false;

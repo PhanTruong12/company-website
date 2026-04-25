@@ -3,10 +3,10 @@ import { PostDetail } from '../features/blog/components/PostDetail';
 import '../features/blog/blog.css';
 
 export default function BlogDetail() {
-  const { id } = useParams();
+  const { id: idOrSlug } = useParams();
 
-  if (!id) {
-    return <p className="blog-filter-meta">Thiếu ID bài viết.</p>;
+  if (!idOrSlug) {
+    return <p className="blog-filter-meta">Thiếu đường dẫn bài viết.</p>;
   }
 
   return (
@@ -15,7 +15,7 @@ export default function BlogDetail() {
         <Link to="/blog" className="blog-detail-back">
           ← Quay lại Blog
         </Link>
-        <PostDetail postId={id} />
+        <PostDetail postIdOrSlug={idOrSlug} />
       </div>
     </div>
   );

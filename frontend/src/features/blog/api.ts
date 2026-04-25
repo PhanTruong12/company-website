@@ -11,9 +11,9 @@ export const blogApi = {
     }
   },
 
-  async getPostById(id: string): Promise<BlogPost> {
+  async getPostById(idOrSlug: string): Promise<BlogPost> {
     try {
-      const { data } = await apiClient.get<ApiResponse<BlogPost>>(`/posts/${id}`);
+      const { data } = await apiClient.get<ApiResponse<BlogPost>>(`/posts/${idOrSlug}`);
       if (!data.data) throw new Error('Không tìm thấy bài viết');
       return data.data;
     } catch (error) {

@@ -218,13 +218,27 @@
 
 /* Responsive */
 @media (max-width: 1023px) {
+  .showroom-dropdown {
+    width: 100%;
+  }
+
+  .showroom-dropdown-toggle {
+    width: 100%;
+    min-height: 44px;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 10px;
+  }
+
   .showroom-dropdown-menu {
     position: static;
     min-width: 100%;
     max-width: 100%;
-    margin-top: 8px;
+    margin-top: 6px;
     box-shadow: none;
-    border: none;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 10px;
     background: rgba(0, 0, 0, 0.02);
   }
 
@@ -244,6 +258,12 @@
 
   .showroom-dropdown-scroll {
     max-height: min(50vh, 360px);
+  }
+
+  .dropdown-item {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
   }
 }
 

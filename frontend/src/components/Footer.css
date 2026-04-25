@@ -295,22 +295,33 @@
 /* Responsive adjustments */
 @media (max-width: 767px) {
   .footer-top {
-    padding: 40px 20px;
-    gap: 32px;
+    padding: 28px 14px;
+    gap: 22px;
   }
 
   .footer-column {
-    gap: 12px;
+    gap: 10px;
   }
 
   .footer-title {
     font-size: 1rem;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .footer-links a,
   .footer-contact-item {
     font-size: 0.9rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  .footer-map-container iframe {
+    height: 120px;
+  }
+
+  .footer-bottom {
+    padding: 16px 14px;
   }
 }
 

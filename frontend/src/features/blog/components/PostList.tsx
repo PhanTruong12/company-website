@@ -82,24 +82,27 @@ export const PostList = () => {
         </div>
       ) : (
         <div className="blog-grid">
-          {pagedPosts.map((post) => (
-            <article key={post._id} className="blog-card">
-              {post.coverImage ? <img src={post.coverImage} alt={post.title} className="blog-card-image" /> : null}
-              <p className="blog-card-date">
-                Đăng lúc: {new Date(post.createdAt).toLocaleString('vi-VN')}
-              </p>
-              <h3 className="blog-card-title">{post.title}</h3>
-              <p className="blog-card-excerpt">{post.description || stripHtml(post.content)}</p>
-              <div className="blog-card-footer">
-                <span className="blog-stats-pill">
-                  👍 {post.likes} · 👎 {post.dislikes} · 👁 {post.views}
-                </span>
-                <Link to={`/blog/${post._id}`} className="blog-read-link">
-                  Xem chi tiết
-                </Link>
-              </div>
-            </article>
-          ))}
+          {pagedPosts.map((post) => {
+            const postPath = post.slug || post._id;
+            return (
+              <article key={post._id} className="blog-card">
+                {post.coverImage ? <img src={post.coverImage} alt={post.title} className="blog-card-image" /> : null}
+                <p className="blog-card-date">
+                  Đăng lúc: {new Date(post.createdAt).toLocaleString('vi-VN')}
+                </p>
+                <h3 className="blog-card-title">{post.title}</h3>
+                <p className="blog-card-excerpt">{post.description || stripHtml(post.content)}</p>
+                <div className="blog-card-footer">
+                  <span className="blog-stats-pill">
+                    👍 {post.likes} · 👎 {post.dislikes} · 👁 {post.views}
+                  </span>
+                  <Link to={`/blog/${postPath}`} className="blog-read-link">
+                    Xem chi tiết
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
 

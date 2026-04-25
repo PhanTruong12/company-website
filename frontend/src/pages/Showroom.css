@@ -2,12 +2,24 @@
 .showroom {
   min-height: 100vh;
   background: #f6f4ee;
-  padding: 32px 16px 40px;
+  padding: 6px 2px 12px;
 }
 
 .showroom-container {
-  max-width: 1400px;
+  max-width: 100%;
   margin: 0 auto;
+}
+
+.showroom-layout {
+  display: block;
+}
+
+.showroom-sidebar {
+  width: 100%;
+}
+
+.showroom-main {
+  min-width: 0;
 }
 
 .showroom-header {
@@ -30,7 +42,15 @@
 
 /* Filters - card style, 2 rows */
 .showroom-filters {
-  margin-bottom: 24px;
+  margin-bottom: 14px;
+}
+
+.showroom-mobile-toolbar,
+.filter-mobile-head,
+.filter-mobile-actions,
+.showroom-filters-overlay,
+.showroom-mobile-fab {
+  display: none;
 }
 
 .filter-card {
@@ -40,15 +60,23 @@
   background: #fafbfc;
   border: 1px solid #e8eaed;
   border-radius: 12px;
-  padding: 16px 20px;
+  padding: 12px 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.filter-card::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 .filter-row-main {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 16px 24px;
+  gap: 10px 12px;
 }
 
 .filter-field {
@@ -151,6 +179,17 @@
   border-radius: 20px;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.filter-chip-group-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .filter-chip:hover {
@@ -427,15 +466,15 @@
 .showroom-count {
   text-align: center;
   color: #666;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   font-size: 0.95rem;
 }
 
 .showroom-load-more-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 32px;
-  margin-bottom: 16px;
+  margin-top: 18px;
+  margin-bottom: 8px;
 }
 
 .showroom-load-more {
@@ -465,7 +504,7 @@
 .showroom-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 28px;
+  gap: 14px;
 }
 
 .gallery-item {
@@ -719,10 +758,43 @@
   right: 12px;
 }
 
+@media (min-width: 1025px) {
+  .showroom {
+    padding: 8px 3px 12px;
+  }
+
+  .showroom-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .showroom-gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .showroom-sidebar {
+    position: sticky;
+    top: 84px;
+    align-self: start;
+  }
+
+  .showroom-filters {
+    margin-bottom: 0;
+  }
+
+  .filter-card {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .showroom {
-    padding: 32px 12px;
+    padding: 6px 2px 12px;
   }
 
   .showroom-filters {
@@ -731,7 +803,100 @@
     z-index: 30;
     padding-top: 4px;
     margin-top: -4px;
-    background: linear-gradient(to bottom, #f6f4ee 85%, transparent);
+    margin-bottom: 10px;
+    background: linear-gradient(to bottom, #f6f4ee 90%, transparent);
+  }
+
+  .showroom-mobile-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .showroom-mobile-toolbar.is-hidden {
+    transform: translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .showroom-mobile-filter-toggle {
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #1f2937;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s ease, background-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .showroom-mobile-total {
+    font-size: 0.82rem;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  .showroom-mobile-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: fixed;
+    right: 14px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    z-index: 1200;
+    min-height: 46px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 999px;
+    background: #1e3a5f;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    box-shadow: 0 10px 22px rgba(17, 24, 39, 0.24);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(16px) scale(0.98);
+    transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .showroom-mobile-fab.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  .showroom-mobile-fab-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .showroom-filters-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.35);
+    border: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 39;
+  }
+
+  .showroom-filters-overlay.is-open {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .showroom-title {
@@ -739,7 +904,47 @@
   }
 
   .filter-card {
+    position: static;
+    z-index: auto;
     padding: 12px 14px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transform: none;
+    transition: none;
+    max-height: none;
+    overflow: visible;
+    display: none;
+  }
+
+  .filter-card.is-open {
+    display: block;
+  }
+
+  .filter-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .filter-mobile-title {
+    margin: 0;
+    font-size: 1rem;
+    color: #1f2937;
+    font-weight: 700;
+  }
+
+  .filter-mobile-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
   }
 
   .showroom-skeleton-grid {
@@ -748,26 +953,84 @@
   }
 
   .filter-row-main {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 12px;
     margin-bottom: 14px;
   }
 
+  .filter-field,
+  .filter-row-positions {
+    min-width: 0;
+    width: 100%;
+  }
+
   .filter-field select {
     min-width: 100%;
+    min-height: 44px;
   }
 
   .filter-reset {
     margin-left: 0;
     width: 100%;
+    min-height: 44px;
+  }
+
+  .filter-positions-head {
+    align-items: center;
+  }
+
+  .filter-chips-scroll {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
+    padding-right: 0;
   }
 
   .btn-clear-filters {
     justify-self: stretch;
   }
 
+  .filter-active-bar {
+    align-items: flex-start;
+  }
+
+  .filter-active-chips {
+    width: 100%;
+    overflow: visible;
+    flex-wrap: wrap;
+    padding-bottom: 0;
+  }
+
+  .filter-mobile-actions {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    margin-top: 10px;
+    background: linear-gradient(to top, #fafbfc 70%, transparent);
+  }
+
+  .filter-mobile-apply {
+    width: 100%;
+    min-height: 44px;
+    border: none;
+    border-radius: 10px;
+    background: #1e3a5f;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
   .showroom-gallery {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
+  }
+
+  .showroom-count {
+    text-align: left;
+    margin-bottom: 14px;
   }
 
   .gallery-overlay {
@@ -787,6 +1050,7 @@
 
   .image-modal-content {
     max-height: 95vh;
+    border-radius: 10px;
   }
 
   .image-modal-image {
@@ -813,6 +1077,7 @@
     right: 16px;
     transform: none;
     max-width: none;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
   @keyframes showroom-toast-in {
@@ -828,6 +1093,23 @@
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
+  .showroom-mobile-toolbar,
+  .filter-mobile-head,
+  .filter-mobile-actions,
+  .showroom-filters-overlay,
+  .showroom-mobile-fab {
+    display: none !important;
+  }
+
+  .filter-card {
+    position: static;
+    transform: none;
+    max-height: none;
+    overflow: visible;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
   .showroom-gallery {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -865,6 +1147,19 @@
 
 /* Touch: chip và nút lọc đủ vùng bấm */
 @media (pointer: coarse) {
+  .showroom-mobile-filter-toggle:active,
+  .showroom-mobile-fab:active {
+    transform: scale(0.98);
+  }
+
+  .gallery-item:hover {
+    transform: none;
+  }
+
+  .gallery-item:hover .gallery-image {
+    transform: none;
+  }
+
   .filter-chip {
     min-height: 44px;
     padding: 10px 16px;

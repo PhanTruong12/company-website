@@ -1,5 +1,5 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -70,11 +70,16 @@ const Showroom = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<InteriorImage | null>(null);
   const [justAppendedIds, setJustAppendedIds] = useState<Set<string>>(new Set());
+  const [selectedPageSize, setSelectedPageSize] = useState<number>(16);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isMobileToolbarHidden, setIsMobileToolbarHidden] = useState(false);
+  const [isNearPageBottom, setIsNearPageBottom] = useState(false);
 
   // Refs giúp xử lý realtime mà không phụ thuộc vào closure/state stale.
   const listMetaRef = useRef<ShowroomListMeta | null>(null);
   const imagesRef = useRef<InteriorImage[]>([]);
   const hasInitializedFromUrlRef = useRef(false);
+  const lastScrollYRef = useRef(0);
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -106,7 +111,8 @@ const Showroom = () => {
       be_mat: string | undefined,
       wallPosition: string[] | undefined,
       page: number,
-      append: boolean
+      append: boolean,
+      limit: number = SHOWROOM_PAGE_SIZE
     ) => {
       if (append) {
         setLoadingMore(true);
@@ -120,7 +126,7 @@ const Showroom = () => {
           be_mat || undefined,
           wallPosition && wallPosition.length > 0 ? wallPosition : undefined,
           page,
-          SHOWROOM_PAGE_SIZE
+          limit
         );
         if (append) {
           const incomingIds = new Set(data.map((i) => i._id));
@@ -134,7 +140,7 @@ const Showroom = () => {
           total: Number(pagination.total ?? 0),
           page: Number(pagination.page ?? page),
           totalPages: Number(pagination.totalPages ?? 0),
-          limit: Number(pagination.limit ?? SHOWROOM_PAGE_SIZE),
+          limit: Number(pagination.limit ?? limit),
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
@@ -155,10 +161,11 @@ const Showroom = () => {
         be_mat,
         wallPosition && wallPosition.length > 0 ? wallPosition : undefined,
         1,
-        false
+        false,
+        selectedPageSize
       );
     },
-    [fetchImagesPage]
+    [fetchImagesPage, selectedPageSize]
   );
 
   const loadMore = useCallback(() => {
@@ -175,7 +182,8 @@ const Showroom = () => {
       selectedBeMat || undefined,
       selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
       nextPage,
-      true
+      true,
+      selectedPageSize
     );
   }, [
     fetchImagesPage,
@@ -185,6 +193,7 @@ const Showroom = () => {
     selectedStoneType,
     selectedBeMat,
     selectedWallPosition,
+    selectedPageSize,
   ]);
 
   // Đọc filter từ URL khi component mount hoặc URL thay đổi
@@ -256,6 +265,11 @@ const Showroom = () => {
     loadFirstPage(finalStoneType, beMatFromUrl, wallPositionFromUrl);
   }, [searchParams, stoneTypes, loadFirstPage, selectedStoneType, selectedBeMat, selectedWallPosition]);
 
+  useEffect(() => {
+    if (!hasInitializedFromUrlRef.current) return;
+    loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
+  }, [selectedPageSize]);
+
   // Sync refs theo state hiện tại
   useEffect(() => {
     listMetaRef.current = listMeta;
@@ -324,9 +338,10 @@ const Showroom = () => {
         const currentMeta = listMetaRef.current;
         const currentPage = currentMeta?.page ?? 1;
         const loadedCount = imagesRef.current.length;
+        const currentLimit = currentMeta?.limit ?? selectedPageSize;
 
         // Nếu user chưa load qua trang 1 (hoặc danh sách còn ít), reset về trang đầu như trước.
-        if (!currentMeta || currentPage <= 1 || loadedCount <= SHOWROOM_PAGE_SIZE) {
+        if (!currentMeta || currentPage <= 1 || loadedCount <= currentLimit) {
           loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
           return;
         }
@@ -340,7 +355,7 @@ const Showroom = () => {
               selectedBeMat || undefined,
               selectedWallPosition.length > 0 ? selectedWallPosition : undefined,
               1,
-              SHOWROOM_PAGE_SIZE
+              currentLimit
             );
 
             setImages((prev) => {
@@ -363,7 +378,7 @@ const Showroom = () => {
                     total: Number(pagination.total ?? 0),
                     page: currentPage,
                     totalPages: Number(pagination.totalPages ?? 0),
-                    limit: Number(pagination.limit ?? SHOWROOM_PAGE_SIZE),
+                    limit: Number(pagination.limit ?? currentLimit),
                   }
             );
           } catch {
@@ -478,7 +493,15 @@ const Showroom = () => {
   const sortedBeMat = [...beMatData].sort((a, b) =>
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
-  const filteredWallPositions = sortedWallPositions;
+  const wallPositionGroups = useMemo(() => {
+    const opGroup = sortedWallPositions.filter((position) =>
+      position.toLocaleLowerCase('vi').startsWith('ốp')
+    );
+    const otherGroup = sortedWallPositions.filter(
+      (position) => !position.toLocaleLowerCase('vi').startsWith('ốp')
+    );
+    return { opGroup, otherGroup };
+  }, [sortedWallPositions]);
 
   const closeImageModal = () => {
     setSelectedImage(null);
@@ -552,324 +575,514 @@ const Showroom = () => {
   };
 
   const hasActiveFilters = !!selectedStoneType || !!selectedBeMat || selectedWallPosition.length > 0;
+  const activeFilterCount =
+    Number(Boolean(selectedStoneType)) +
+    Number(Boolean(selectedBeMat)) +
+    selectedWallPosition.length;
 
   const hasMore =
     listMeta !== null &&
     listMeta.total > 0 &&
     images.length < listMeta.total;
 
+  const buildGallerySrcSet = (imageUrl: string | undefined | null): string =>
+    [320, 480, 640, 900]
+      .map((width) => `${getImageUrl(imageUrl, { width, crop: 'fill' })} ${width}w`)
+      .join(', ');
+
   const modalImageIndex =
     selectedImage != null
       ? sortedImages.findIndex((i) => i._id === selectedImage._id)
       : -1;
+  const shouldShowMobileFab =
+    isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
+
+  const triggerMobileTapFeedback = () => {
+    if (typeof window === 'undefined' || !window.matchMedia('(pointer: coarse)').matches) return;
+    if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
+    // Haptic nhẹ để tránh rung mạnh gây khó chịu.
+    navigator.vibrate(10);
+  };
+
+  useEffect(() => {
+    if (!isMobileFiltersOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMobileFiltersOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isMobileFiltersOpen]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const updateToolbarForViewport = (matches: boolean) => {
+      if (!matches) setIsMobileToolbarHidden(false);
+    };
+    updateToolbarForViewport(media.matches);
+    const onMediaChange = (event: MediaQueryListEvent) => {
+      updateToolbarForViewport(event.matches);
+    };
+    media.addEventListener('change', onMediaChange);
+    return () => media.removeEventListener('change', onMediaChange);
+  }, []);
+
+  useEffect(() => {
+    if (isMobileFiltersOpen) {
+      setIsMobileToolbarHidden(false);
+      return;
+    }
+
+    const onScroll = () => {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+      const currentY = Math.max(window.scrollY, 0);
+      const previousY = lastScrollYRef.current;
+      const delta = currentY - previousY;
+      const viewportBottom = currentY + window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const nearBottom = viewportBottom >= documentHeight - 180;
+      setIsNearPageBottom(nearBottom);
+
+      if (currentY <= 56) {
+        setIsMobileToolbarHidden(false);
+      } else if (delta > 8) {
+        setIsMobileToolbarHidden(true);
+      } else if (delta < -6) {
+        setIsMobileToolbarHidden(false);
+      }
+      lastScrollYRef.current = currentY;
+    };
+
+    lastScrollYRef.current = Math.max(window.scrollY, 0);
+    const initialViewportBottom = window.scrollY + window.innerHeight;
+    const initialNearBottom =
+      initialViewportBottom >= document.documentElement.scrollHeight - 180;
+    setIsNearPageBottom(initialNearBottom);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isMobileFiltersOpen]);
 
   return (
     <div className="showroom">
       <div className="showroom-container">
-        {/* Filter bar - phong cách card nhẹ */}
-        <div className="showroom-filters">
-          <div className="filter-card">
-            <div className="filter-row-main">
-              <div className="filter-field">
-                <label htmlFor="stoneType">Loại đá</label>
-                <select
-                  id="stoneType"
-                  value={selectedStoneType}
-                  onChange={handleStoneTypeChange}
+        <div className="showroom-layout">
+          <aside className="showroom-sidebar">
+            {/* Filter bar - phong cách card nhẹ */}
+            <div className="showroom-filters">
+              <div
+                className={`showroom-mobile-toolbar ${
+                  isMobileToolbarHidden && !isMobileFiltersOpen ? 'is-hidden' : ''
+                }`}
+              >
+                <button
+                  type="button"
+                  className="showroom-mobile-filter-toggle"
+                  onClick={() => {
+                    triggerMobileTapFeedback();
+                    setIsMobileFiltersOpen(true);
+                  }}
+                  aria-expanded={isMobileFiltersOpen}
+                  aria-controls="showroom-filter-panel"
                 >
-                  <option value="">Tất cả</option>
-                  {isLoadingStoneTypes ? (
-                    <option disabled>Đang tải...</option>
-                  ) : (
-                    sortedStoneTypes.map((type) => (
-                      <option key={type.name} value={type.name}>
-                        {type.name}
-                      </option>
-                    ))
-                  )}
-                </select>
+                  Bộ lọc {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+                </button>
+                <span className="showroom-mobile-total">
+                  {listMeta?.total ?? sortedImages.length} ảnh
+                </span>
               </div>
-              <div className="filter-field">
-                <label htmlFor="sortOrder">Sắp xếp</label>
-                <select
-                  id="sortOrder"
-                  value={sortOrder}
-                  onChange={(e) =>
-                    setSortOrder(e.target.value as 'az' | 'za' | 'default')
-                  }
-                >
-                  <option value="az">A - Z</option>
-                  <option value="za">Z - A</option>
-                  <option value="default">Mặc định</option>
-                </select>
-              </div>
-              <div className="filter-field">
-                <label htmlFor="be_mat">Bề mặt</label>
-                <select
-                  id="be_mat"
-                  value={selectedBeMat}
-                  onChange={handleBeMatChange}
-                >
-                  <option value="">Tất cả</option>
-                  {isLoadingBeMat ? (
-                    <option disabled>Đang tải...</option>
-                  ) : (
-                    sortedBeMat.map((beMat) => (
-                      <option key={beMat} value={beMat}>
-                        {beMat}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-              <div className="filter-row-positions">
-                <div className="filter-positions-head">
-                  <span className="filter-positions-label">Vị trí sử dụng</span>
-                  <span className="filter-positions-count">
-                    Đã chọn {selectedWallPosition.length} vị trí
-                  </span>
-                </div>
-                <div className="filter-chips-wrap">
-                  <div
-                    className="filter-chips-scroll"
-                    role="group"
-                    aria-label="Chọn vị trí ốp"
+              <button
+                type="button"
+                className={`showroom-mobile-fab ${
+                  shouldShowMobileFab ? 'is-visible' : ''
+                }`}
+                onClick={() => {
+                  triggerMobileTapFeedback();
+                  setIsMobileFiltersOpen(true);
+                }}
+                aria-label={`Mở bộ lọc${activeFilterCount > 0 ? `, có ${activeFilterCount} bộ lọc đang bật` : ''}`}
+              >
+                <span className="showroom-mobile-fab-icon" aria-hidden>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                    <path
+                      d="M3 6h18M6 12h12M10 18h4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                Lọc {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
+              </button>
+              <button
+                type="button"
+                className={`showroom-filters-overlay ${isMobileFiltersOpen ? 'is-open' : ''}`}
+                onClick={() => setIsMobileFiltersOpen(false)}
+                aria-label="Đóng bộ lọc"
+              />
+              <div
+                id="showroom-filter-panel"
+                className={`filter-card ${isMobileFiltersOpen ? 'is-open' : ''}`}
+              >
+                <div className="filter-mobile-head">
+                  <h2 className="filter-mobile-title">Bộ lọc showroom</h2>
+                  <button
+                    type="button"
+                    className="filter-mobile-close"
+                    onClick={() => setIsMobileFiltersOpen(false)}
+                    aria-label="Đóng bộ lọc"
                   >
+                    ×
+                  </button>
+                </div>
+                <div className="filter-row-main">
+                  <div className="filter-field">
+                    <label htmlFor="stoneType">🪨 Loại đá</label>
+                    <select
+                      id="stoneType"
+                      value={selectedStoneType}
+                      onChange={handleStoneTypeChange}
+                    >
+                      <option value="">Tất cả</option>
+                      {isLoadingStoneTypes ? (
+                        <option disabled>Đang tải...</option>
+                      ) : (
+                        sortedStoneTypes.map((type) => (
+                          <option key={type.name} value={type.name}>
+                            {type.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div className="filter-field">
+                    <label htmlFor="sortOrder">↕️ Sắp xếp</label>
+                    <select
+                      id="sortOrder"
+                      value={sortOrder}
+                      onChange={(e) =>
+                        setSortOrder(e.target.value as 'az' | 'za' | 'default')
+                      }
+                    >
+                      <option value="az">A - Z</option>
+                      <option value="za">Z - A</option>
+                      <option value="default">Mặc định</option>
+                    </select>
+                  </div>
+                  <div className="filter-field">
+                    <label htmlFor="be_mat">✨ Bề mặt</label>
+                    <select
+                      id="be_mat"
+                      value={selectedBeMat}
+                      onChange={handleBeMatChange}
+                    >
+                      <option value="">Tất cả</option>
+                      {isLoadingBeMat ? (
+                        <option disabled>Đang tải...</option>
+                      ) : (
+                        sortedBeMat.map((beMat) => (
+                          <option key={beMat} value={beMat}>
+                            {beMat}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div className="filter-field">
+                    <label htmlFor="showroomPageSize">🔢 Hiển thị</label>
+                    <select
+                      id="showroomPageSize"
+                      value={selectedPageSize}
+                      onChange={(e) => setSelectedPageSize(Number(e.target.value))}
+                    >
+                      <option value={16}>16 ảnh</option>
+                      <option value={12}>12 ảnh</option>
+                      <option value={24}>24 ảnh</option>
+                      <option value={36}>36 ảnh</option>
+                    </select>
+                  </div>
+                  <div className="filter-row-positions">
+                    <div className="filter-positions-head">
+                      <span className="filter-positions-label">Vị trí sử dụng</span>
+                      <span className="filter-positions-count">
+                        Đã chọn {selectedWallPosition.length} vị trí
+                      </span>
+                    </div>
+                    <div className="filter-chips-wrap">
+                      <div
+                        className="filter-chips-scroll"
+                        role="group"
+                        aria-label="Chọn vị trí ốp"
+                      >
+                        <button
+                          type="button"
+                          className={`filter-chip ${selectedWallPosition.length === 0 ? 'is-selected' : ''}`}
+                          onClick={() => {
+                            if (selectedWallPosition.length === 0) return;
+                            setSelectedWallPosition([]);
+                            syncWallPositions([]);
+                          }}
+                          aria-pressed={selectedWallPosition.length === 0}
+                        >
+                          Tất cả
+                        </button>
+                        {wallPositionGroups.otherGroup.map((position) => {
+                          const selected = selectedWallPosition.includes(position);
+                          return (
+                            <button
+                              key={position}
+                              type="button"
+                              className={`filter-chip ${selected ? 'is-selected' : ''}`}
+                              onClick={() => toggleWallPosition(position)}
+                              aria-pressed={selected}
+                            >
+                              {position}
+                            </button>
+                          );
+                        })}
+                        {wallPositionGroups.opGroup.length > 0 && (
+                          <span className="filter-chip-group-label">Nhóm Ốp</span>
+                        )}
+                        {wallPositionGroups.opGroup.map((position) => {
+                          const selected = selectedWallPosition.includes(position);
+                          return (
+                            <button
+                              key={position}
+                              type="button"
+                              className={`filter-chip ${selected ? 'is-selected' : ''}`}
+                              onClick={() => toggleWallPosition(position)}
+                              aria-pressed={selected}
+                            >
+                              {position}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  {hasActiveFilters && (
                     <button
                       type="button"
-                      className={`filter-chip ${selectedWallPosition.length === 0 ? 'is-selected' : ''}`}
+                      className="filter-reset"
                       onClick={() => {
-                        if (selectedWallPosition.length === 0) return;
-                        setSelectedWallPosition([]);
-                        syncWallPositions([]);
+                        clearFilters();
+                        setIsMobileFiltersOpen(false);
                       }}
-                      aria-pressed={selectedWallPosition.length === 0}
                     >
-                      Tất cả
+                      Xóa tất cả filter
                     </button>
-                    {filteredWallPositions.map((position) => {
-                      const selected = selectedWallPosition.includes(position);
-                      return (
+                  )}
+                </div>
+                <div className="filter-mobile-actions">
+                  <button
+                    type="button"
+                    className="filter-mobile-apply"
+                    onClick={() => setIsMobileFiltersOpen(false)}
+                  >
+                    Xem kết quả
+                  </button>
+                </div>
+                {hasActiveFilters && (
+                  <div
+                    className="filter-active-bar"
+                    aria-label="Bộ lọc đang áp dụng"
+                  >
+                    <span className="filter-active-title">Đang lọc</span>
+                    <div className="filter-active-chips">
+                      {selectedStoneType && (
+                        <button
+                          type="button"
+                          className="filter-active-chip"
+                          onClick={removeStoneTypeFilter}
+                          aria-label={`Bỏ lọc loại đá ${selectedStoneType}`}
+                        >
+                          <span className="filter-active-chip-label">Loại đá</span>
+                          <span className="filter-active-chip-value">{selectedStoneType}</span>
+                          <span className="filter-active-chip-remove" aria-hidden>
+                            ×
+                          </span>
+                        </button>
+                      )}
+                      {selectedBeMat && (
+                        <button
+                          type="button"
+                          className="filter-active-chip"
+                          onClick={removeBeMatFilter}
+                          aria-label={`Bỏ lọc bề mặt ${selectedBeMat}`}
+                        >
+                          <span className="filter-active-chip-label">Bề mặt</span>
+                          <span className="filter-active-chip-value">{selectedBeMat}</span>
+                          <span className="filter-active-chip-remove" aria-hidden>
+                            ×
+                          </span>
+                        </button>
+                      )}
+                      {selectedWallPosition.map((position) => (
                         <button
                           key={position}
                           type="button"
-                          className={`filter-chip ${selected ? 'is-selected' : ''}`}
-                          onClick={() => toggleWallPosition(position)}
-                          aria-pressed={selected}
+                          className="filter-active-chip"
+                          onClick={() => removeWallFilter(position)}
+                          aria-label={`Bỏ lọc vị trí ${position}`}
                         >
-                          {position}
+                          <span className="filter-active-chip-label">Vị trí</span>
+                          <span className="filter-active-chip-value">{position}</span>
+                          <span className="filter-active-chip-remove" aria-hidden>
+                            ×
+                          </span>
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  className="filter-reset"
-                  onClick={clearFilters}
-                >
-                  Xóa bộ lọc
-                </button>
-              )}
             </div>
-            {hasActiveFilters && (
-              <div
-                className="filter-active-bar"
-                aria-label="Bộ lọc đang áp dụng"
-              >
-                <span className="filter-active-title">Đang lọc</span>
-                <div className="filter-active-chips">
-                  {selectedStoneType && (
-                    <button
-                      type="button"
-                      className="filter-active-chip"
-                      onClick={removeStoneTypeFilter}
-                      aria-label={`Bỏ lọc loại đá ${selectedStoneType}`}
-                    >
-                      <span className="filter-active-chip-label">Loại đá</span>
-                      <span className="filter-active-chip-value">{selectedStoneType}</span>
-                      <span className="filter-active-chip-remove" aria-hidden>
-                        ×
-                      </span>
-                    </button>
-                  )}
-                  {selectedBeMat && (
-                    <button
-                      type="button"
-                      className="filter-active-chip"
-                      onClick={removeBeMatFilter}
-                      aria-label={`Bỏ lọc bề mặt ${selectedBeMat}`}
-                    >
-                      <span className="filter-active-chip-label">Bề mặt</span>
-                      <span className="filter-active-chip-value">{selectedBeMat}</span>
-                      <span className="filter-active-chip-remove" aria-hidden>
-                        ×
-                      </span>
-                    </button>
-                  )}
-                  {selectedWallPosition.map((position) => (
-                    <button
-                      key={position}
-                      type="button"
-                      className="filter-active-chip"
-                      onClick={() => removeWallFilter(position)}
-                      aria-label={`Bỏ lọc vị trí ${position}`}
-                    >
-                      <span className="filter-active-chip-label">Vị trí</span>
-                      <span className="filter-active-chip-value">{position}</span>
-                      <span className="filter-active-chip-remove" aria-hidden>
-                        ×
-                      </span>
-                    </button>
-                  ))}
+          </aside>
+
+          <section className="showroom-main">
+            {/* Toast lỗi */}
+            {error && (
+              <div className="showroom-toast" role="alert" aria-live="assertive">
+                <p className="showroom-toast-text">{error}</p>
+                <div className="showroom-toast-actions">
+                  <button
+                    type="button"
+                    className="showroom-toast-retry"
+                    onClick={() =>
+                      loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition)
+                    }
+                  >
+                    Thử lại
+                  </button>
+                  <button
+                    type="button"
+                    className="showroom-toast-dismiss"
+                    onClick={() => setError(null)}
+                    aria-label="Đóng thông báo"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Toast lỗi */}
-        {error && (
-          <div className="showroom-toast" role="alert" aria-live="assertive">
-            <p className="showroom-toast-text">{error}</p>
-            <div className="showroom-toast-actions">
-              <button
-                type="button"
-                className="showroom-toast-retry"
-                onClick={() =>
-                  loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition)
-                }
+            {/* Skeleton khi tải trang đầu */}
+            {loading && images.length === 0 && (
+              <div
+                className="showroom-skeleton-grid"
+                aria-busy="true"
+                aria-label="Đang tải thư viện ảnh"
               >
-                Thử lại
-              </button>
-              <button
-                type="button"
-                className="showroom-toast-dismiss"
-                onClick={() => setError(null)}
-                aria-label="Đóng thông báo"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Skeleton khi tải trang đầu */}
-        {loading && images.length === 0 && (
-          <div
-            className="showroom-skeleton-grid"
-            aria-busy="true"
-            aria-label="Đang tải thư viện ảnh"
-          >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="gallery-skeleton-card">
-                <div className="gallery-skeleton-shimmer" />
-                <div className="gallery-skeleton-line gallery-skeleton-line--wide" />
-                <div className="gallery-skeleton-line gallery-skeleton-line--narrow" />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Gallery */}
-        {!loading && !error && (
-          <>
-            {images.length === 0 ? (
-              <div className="showroom-empty">
-                <div className="showroom-empty-icon" aria-hidden>
-                  <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
-                    <rect x="8" y="14" width="48" height="36" rx="4" stroke="currentColor" strokeWidth="2" />
-                    <circle cx="24" cy="28" r="6" stroke="currentColor" strokeWidth="2" />
-                    <path d="M8 42l14-12 10 10 12-10 12 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <p className="showroom-empty-title">Không có ảnh phù hợp</p>
-                <p className="showroom-empty-hint">
-                  {selectedStoneType || selectedBeMat || selectedWallPosition.length > 0
-                    ? 'Thử đổi loại đá hoặc vị trí ốp, hoặc xem toàn bộ thư viện.'
-                    : 'Hiện chưa có ảnh nào trong thư viện. Vui lòng quay lại sau.'}
-                </p>
-                {(selectedStoneType || selectedBeMat || selectedWallPosition.length > 0) && (
-                  <button type="button" onClick={clearFilters} className="btn-clear-filters">
-                    Xem tất cả hình ảnh
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="showroom-count">
-                  Hiển thị {sortedImages.length} /{' '}
-                  {listMeta?.total ?? sortedImages.length} ảnh
-                </div>
-                <div className="showroom-gallery">
-                  {sortedImages.map((image, idx) => (
-                    <button
-                      key={image._id}
-                      type="button"
-                      className={`gallery-item ${
-                        justAppendedIds.has(image._id) ? 'is-new' : ''
-                      }`}
-                      style={
-                        justAppendedIds.has(image._id)
-                          ? ({ ['--enter-delay' as never]: `${Math.min(10, idx) * 35}ms` } as CSSProperties)
-                          : undefined
-                      }
-                      onClick={() => setSelectedImage(image)}
-                      aria-label={`Xem chi tiết ${image.name}`}
-                    >
-                      <div className="gallery-image-wrapper">
-                        <img
-                          src={getImageUrl(image.imageUrl, { width: 600, crop: 'fill' })}
-                          alt={image.name}
-                          className="gallery-image"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
-                          }}
-                        />
-                        <div className="gallery-overlay">
-                          <div className="gallery-info">
-                            <h3 className="gallery-title">{image.name}</h3>
-                            <p className="gallery-meta">
-                              {getImageStoneTypes(image).map((type) => (
-                                <span key={`${image._id}-stone-${type}`} className="gallery-tag">{type}</span>
-                              ))}
-                              {getImageSurfaces(image).map((surface) => (
-                                <span key={`${image._id}-${surface}`} className="gallery-tag">{surface}</span>
-                              ))}
-                              <span className="gallery-tag">
-                                {Array.isArray(image.wallPosition)
-                                  ? image.wallPosition.join(', ')
-                                  : image.wallPosition}
-                              </span>
-                            </p>
-                            {image.description && (
-                              <p className="gallery-description">{image.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                {hasMore && (
-                  <div className="showroom-load-more-wrap">
-                    <button
-                      type="button"
-                      className="showroom-load-more"
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore ? 'Đang tải...' : 'Xem thêm'}
-                    </button>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="gallery-skeleton-card">
+                    <div className="gallery-skeleton-shimmer" />
+                    <div className="gallery-skeleton-line gallery-skeleton-line--wide" />
+                    <div className="gallery-skeleton-line gallery-skeleton-line--narrow" />
                   </div>
+                ))}
+              </div>
+            )}
+
+            {/* Gallery */}
+            {!loading && !error && (
+              <>
+                {images.length === 0 ? (
+                  <div className="showroom-empty">
+                    <div className="showroom-empty-icon" aria-hidden>
+                      <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
+                        <rect x="8" y="14" width="48" height="36" rx="4" stroke="currentColor" strokeWidth="2" />
+                        <circle cx="24" cy="28" r="6" stroke="currentColor" strokeWidth="2" />
+                        <path d="M8 42l14-12 10 10 12-10 12 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <p className="showroom-empty-title">Không có ảnh phù hợp</p>
+                    <p className="showroom-empty-hint">
+                      {selectedStoneType || selectedBeMat || selectedWallPosition.length > 0
+                        ? 'Thử đổi loại đá hoặc vị trí ốp, hoặc xem toàn bộ thư viện.'
+                        : 'Hiện chưa có ảnh nào trong thư viện. Vui lòng quay lại sau.'}
+                    </p>
+                    {(selectedStoneType || selectedBeMat || selectedWallPosition.length > 0) && (
+                      <button type="button" onClick={clearFilters} className="btn-clear-filters">
+                        Xem tất cả hình ảnh
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <div className="showroom-count">
+                      Hiển thị {sortedImages.length} /{' '}
+                      {listMeta?.total ?? sortedImages.length} ảnh
+                    </div>
+                    <div className="showroom-gallery">
+                      {sortedImages.map((image, idx) => (
+                        <button
+                          key={image._id}
+                          type="button"
+                          className={`gallery-item ${
+                            justAppendedIds.has(image._id) ? 'is-new' : ''
+                          }`}
+                          style={
+                            justAppendedIds.has(image._id)
+                              ? ({ ['--enter-delay' as never]: `${Math.min(10, idx) * 35}ms` } as CSSProperties)
+                              : undefined
+                          }
+                          onClick={() => setSelectedImage(image)}
+                          aria-label={`Xem chi tiết ${image.name}`}
+                        >
+                          <div className="gallery-image-wrapper">
+                            <img
+                              src={getImageUrl(image.imageUrl, { width: 640, crop: 'fill' })}
+                              srcSet={buildGallerySrcSet(image.imageUrl)}
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              alt={image.name}
+                              className="gallery-image"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
+                              }}
+                            />
+                            <div className="gallery-overlay">
+                              <div className="gallery-info">
+                                <h3 className="gallery-title">{image.name}</h3>
+                                <p className="gallery-meta">
+                                  {getImageStoneTypes(image).map((type) => (
+                                    <span key={`${image._id}-stone-${type}`} className="gallery-tag">{type}</span>
+                                  ))}
+                                  {getImageSurfaces(image).map((surface) => (
+                                    <span key={`${image._id}-${surface}`} className="gallery-tag">{surface}</span>
+                                  ))}
+                                  <span className="gallery-tag">
+                                    {Array.isArray(image.wallPosition)
+                                      ? image.wallPosition.join(', ')
+                                      : image.wallPosition}
+                                  </span>
+                                </p>
+                                {image.description && (
+                                  <p className="gallery-description">{image.description}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    {hasMore && (
+                      <div className="showroom-load-more-wrap">
+                        <button
+                          type="button"
+                          className="showroom-load-more"
+                          onClick={loadMore}
+                          disabled={loadingMore}
+                        >
+                          {loadingMore ? 'Đang tải...' : 'Xem thêm'}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
-          </>
-        )}
+          </section>
+        </div>
         {selectedImage && (
           <div
             className="image-modal"
@@ -911,9 +1124,17 @@ const Showroom = () => {
                 ×
               </button>
               <img
-                src={getImageUrl(selectedImage.imageUrl)}
+                src={getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })}
+                srcSet={[
+                  `${getImageUrl(selectedImage.imageUrl, { width: 640, crop: 'limit' })} 640w`,
+                  `${getImageUrl(selectedImage.imageUrl, { width: 960, crop: 'limit' })} 960w`,
+                  `${getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
+                ].join(', ')}
+                sizes="(max-width: 768px) 100vw, 90vw"
                 alt={selectedImage.name}
                 className="image-modal-image"
+                loading="eager"
+                decoding="async"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
                 }}

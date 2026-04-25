@@ -9,7 +9,7 @@ import type { BlogPost } from '../types';
 import { subscribeBlogUpdated } from '../../../utils/blogSync';
 
 interface PostDetailProps {
-  postId: string;
+  postIdOrSlug: string;
 }
 
 const YOUTUBE_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/i;
@@ -29,21 +29,24 @@ const sanitizeBlogHtml = (html: string) =>
     ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'scrolling', 'controls', 'src', 'type'],
   });
 
-export const PostDetail = ({ postId }: PostDetailProps) => {
+export const PostDetail = ({ postIdOrSlug }: PostDetailProps) => {
   const queryClient = useQueryClient();
   const postQuery = useQuery({
-    queryKey: ['blog-post', postId],
-    queryFn: () => blogApi.getPostById(postId),
+    queryKey: ['blog-post', postIdOrSlug],
+    queryFn: () => blogApi.getPostById(postIdOrSlug),
   });
 
   const reactMutation = useMutation({
-    mutationFn: (type: 'like' | 'dislike') => blogApi.reactPost(postId, type),
+    mutationFn: (type: 'like' | 'dislike') => {
+      if (!postQuery.data?._id) throw new Error('Không tìm thấy ID bài viết');
+      return blogApi.reactPost(postQuery.data._id, type);
+    },
     onMutate: async (type) => {
-      await queryClient.cancelQueries({ queryKey: ['blog-post', postId] });
-      const previousPost = queryClient.getQueryData<BlogPost>(['blog-post', postId]);
+      await queryClient.cancelQueries({ queryKey: ['blog-post', postIdOrSlug] });
+      const previousPost = queryClient.getQueryData<BlogPost>(['blog-post', postIdOrSlug]);
 
       if (previousPost) {
-        queryClient.setQueryData<BlogPost>(['blog-post', postId], {
+        queryClient.setQueryData<BlogPost>(['blog-post', postIdOrSlug], {
           ...previousPost,
           likes: previousPost.likes + (type === 'like' ? 1 : 0),
           dislikes: previousPost.dislikes + (type === 'dislike' ? 1 : 0),
@@ -54,11 +57,11 @@ export const PostDetail = ({ postId }: PostDetailProps) => {
     },
     onError: (_error, _value, context) => {
       if (context?.previousPost) {
-        queryClient.setQueryData(['blog-post', postId], context.previousPost);
+        queryClient.setQueryData(['blog-post', postIdOrSlug], context.previousPost);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['blog-post', postId] });
+      queryClient.invalidateQueries({ queryKey: ['blog-post', postIdOrSlug] });
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
     },
   });
@@ -66,21 +69,21 @@ export const PostDetail = ({ postId }: PostDetailProps) => {
   useEffect(() => {
     const unsubscribe = subscribeBlogUpdated((payload) => {
       if (!payload.postId) return;
-      if (payload.postId !== postId) return;
+      if (payload.postId !== postQuery.data?._id) return;
 
       if (payload.action === 'deleted') {
-        queryClient.invalidateQueries({ queryKey: ['blog-post', postId] });
+        queryClient.invalidateQueries({ queryKey: ['blog-post', postIdOrSlug] });
         queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
         return;
       }
 
       if (payload.post) {
-        queryClient.setQueryData(['blog-post', postId], payload.post);
+        queryClient.setQueryData(['blog-post', postIdOrSlug], payload.post);
       }
       queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
     });
     return unsubscribe;
-  }, [postId, queryClient]);
+  }, [postIdOrSlug, postQuery.data?._id, queryClient]);
 
   if (postQuery.isLoading) {
     return <p className="blog-filter-meta">Đang tải chi tiết bài viết...</p>;
