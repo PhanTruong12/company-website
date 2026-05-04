@@ -1,72 +1,108 @@
-import { Link } from 'react-router-dom';
-import { publicAsset } from '../utils/publicAsset';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchAllInteriorImages } from '../features/showroom/api';
+import type { InteriorImage } from '../shared/types';
+import { orderCarouselCategoryItems, stoneCollectionCategories } from '../data/stoneCollections';
+import { HomeSectionCTA } from './HomeSectionCTA';
+import { Stone3DCarousel } from './Stone3DCarousel';
+import './CollectionSection.css';
 
-const collections = [
-  {
-    title: 'Bộ Sưu Tập Đá Thạch Anh',
-    desc: 'Sự kết hợp tinh tế giữa công nghệ và thẩm mỹ, đá nung kết mang đến vẻ đẹp tự nhiên cùng độ bền Bộ sưu tập đá thạch anh mang đến vẻ đẹp hiện đại, sang trọng và tinh tế, tạo điểm nhấn độc đáo cho không gian nội thất của bạn.chắc lâu dài cho nội thất ngôi nhà.',
-    img: publicAsset('thachanh.jpg'),
-    stoneType: 'Thạch Anh',
-    id: 'thach-anh',
-  },
-  {
-    title: 'Bộ Sưu Tập Đá Nung Kết',
-    desc: 'Sự kết hợp tinh tế giữa công nghệ và thẩm mỹ, đá nung kết mang đến vẻ đẹp tự nhiên cùng độ bền chắc lâu dài cho nội thất ngôi nhà.',
-    img: publicAsset('nungket.jpg'),
-    stoneType: 'Nung Kết',
-    id: 'nung-ket',
-  },
-  {
-    title: 'Bộ Sưu Tập Đá Tự Nhiên',
-    desc: 'Bộ sưu tập đá tự nhiên mang vẻ đẹp nguyên bản, độc nhất vô nhị của thiên nhiên, tạo điểm nhấn sang trọng và đẳng cấp cho không gian sống.',
-    img: publicAsset('tunhien.jpg'),
-    stoneType: 'Tự Nhiên',
-    id: 'tu-nhien',
-  },
-  {
-    title: 'Bộ Sưu Tập Đá Solid Surface',
-    desc: 'Bộ sưu tập đá Solid Surface nổi bật với bề mặt liền mạch, dễ tạo hình và phù hợp cho các không gian nội thất hiện đại, tinh gọn.',
-    img: publicAsset('solid.jpg'),
-    stoneType: 'Solid Surface',
-    id: 'solid-surface',
-  },
-];
+const normalizeText = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('vi');
 
-const CollectionSection = () => (
-  <>
-    {collections.map((item, idx) => {
-      // Tạo URL với query parameter được encode đúng cách
-      const href = `/showroom?stoneType=${encodeURIComponent(item.stoneType)}`;
-      
-      return (
-        <section
-          key={item.id}
-          id={item.id}
-          className="collection-section"
-        >
-          <div className={`collection-container ${idx % 2 === 1 ? 'collection-reverse' : ''}`}>
-            <div className="collection-image">
-              <img
-                src={item.img}
-                alt={item.title}
-                loading="lazy"
-              />
-            </div>
-            <div className="collection-content">
-              <h3 className="collection-title">{item.title}</h3>
-              <p className="collection-desc">
-                {item.desc}
-              </p>
-              <Link className="collection-link" to={href}>
-                Xem Thêm &gt;&gt;
-              </Link>
-            </div>
+const getImageStoneTypes = (img: InteriorImage): string[] => {
+  const source = img.stoneType;
+  const raw = Array.isArray(source) ? source : typeof source === 'string' ? source.split(',') : [];
+  return raw.map((item) => String(item).trim()).filter(Boolean);
+};
+
+const getImageWallPositions = (img: InteriorImage): string[] => {
+  const source = img.wallPosition;
+  const raw = Array.isArray(source) ? source : [String(source)];
+  return raw.map((item) => String(item).trim()).filter(Boolean);
+};
+
+export const StoneCollectionSection = () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['home-stone-collection-images'],
+    queryFn: () => fetchAllInteriorImages(undefined, undefined, undefined),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const categoriesWithItems = useMemo(() => {
+    const images = data ?? [];
+
+    return stoneCollectionCategories.map((category) => {
+      const rawItems = images
+        .filter((image) => {
+          const imageStoneTypes = getImageStoneTypes(image).map(normalizeText);
+          const imageWallPositions = getImageWallPositions(image).map(normalizeText);
+          const categoryStoneTypes = category.stoneTypeFilters.map(normalizeText);
+          const categoryWallPositions = category.wallPositionFilters.map(normalizeText);
+
+          const matchesStoneType = categoryStoneTypes.some((stoneType) =>
+            imageStoneTypes.some((value) => value.includes(stoneType) || stoneType.includes(value))
+          );
+
+          if (!matchesStoneType) return false;
+
+          if (categoryWallPositions.length === 0) return true;
+
+          return categoryWallPositions.some((wallPosition) =>
+            imageWallPositions.includes(wallPosition)
+          );
+        })
+        .map((image) => ({
+          id: image._id,
+          imageUrl: image.imageUrl,
+          title: image.name,
+          category: category.name,
+          description: image.description || undefined,
+          alt: `${image.name} - ${category.name}`,
+          width: 1200,
+          height: 750,
+        }));
+
+      const items = orderCarouselCategoryItems(rawItems, category);
+
+      return {
+        ...category,
+        items,
+      };
+    });
+  }, [data]);
+
+  if (stoneCollectionCategories.length === 0) return null;
+
+  return (
+    <section className="stone-collection-section">
+      <div className="stone-collection-container">
+        <header className="stone-collection-header">
+          <h2 className="stone-collection-title">Bộ sưu tập đá</h2>
+        </header>
+
+        {isLoading ? (
+          <div className="stone-collection-status">Đang tải dữ liệu bộ sưu tập...</div>
+        ) : error ? (
+          <div className="stone-collection-status stone-collection-status--error">
+            Không thể tải dữ liệu bộ sưu tập lúc này.
           </div>
-        </section>
-      );
-    })}
-  </>
-);
+        ) : (
+          <div className="stone-collection-carousel-stack">
+            {categoriesWithItems.map((category) => (
+              <article key={category.id} className="stone-collection-carousel-stack-item">
+                <Stone3DCarousel categoryName={category.name} items={category.items} />
+              </article>
+            ))}
+          </div>
+        )}
+
+        <HomeSectionCTA label="Nhận báo giá" className="stone-collection-cta" />
+      </div>
+    </section>
+  );
+};
+
+const CollectionSection = () => <StoneCollectionSection />;
 
 export default CollectionSection;
 

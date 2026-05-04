@@ -1,5 +1,5 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
-import { useState, useEffect, useCallback, useMemo, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -30,6 +30,17 @@ const getImageStoneTypes = (img: InteriorImage): string[] => {
   const raw = Array.isArray(source) ? source : typeof source === 'string' ? source.split(',') : [];
   return raw.map((item) => String(item).trim()).filter(Boolean);
 };
+
+/**
+ * Chuẩn hóa tên loại đá để khớp URL ↔ dropdown (không dùng includes — tránh map nhầm sang loại khác).
+ */
+const normalizeStoneLabelForMatch = (value: string) =>
+  value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .normalize('NFC')
+    .toLocaleLowerCase('vi')
+    .replace(/^đá\s+/iu, '');
 
 const matchesShowroomFilters = (
   img: InteriorImage,
@@ -80,6 +91,8 @@ const Showroom = () => {
   const imagesRef = useRef<InteriorImage[]>([]);
   const hasInitializedFromUrlRef = useRef(false);
   const lastScrollYRef = useRef(0);
+  /** Tăng mỗi lần gọi API danh sách — bỏ qua phản hồi cũ khi đổi lọc nhanh. */
+  const galleryFetchGenerationRef = useRef(0);
   
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
@@ -114,6 +127,7 @@ const Showroom = () => {
       append: boolean,
       limit: number = SHOWROOM_PAGE_SIZE
     ) => {
+      const requestGeneration = ++galleryFetchGenerationRef.current;
       if (append) {
         setLoadingMore(true);
       } else {
@@ -128,6 +142,9 @@ const Showroom = () => {
           page,
           limit
         );
+        if (requestGeneration !== galleryFetchGenerationRef.current) {
+          return;
+        }
         if (append) {
           const incomingIds = new Set(data.map((i) => i._id));
           setJustAppendedIds(incomingIds);
@@ -143,10 +160,15 @@ const Showroom = () => {
           limit: Number(pagination.limit ?? limit),
         });
       } catch (err) {
+        if (requestGeneration !== galleryFetchGenerationRef.current) {
+          return;
+        }
         setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (requestGeneration === galleryFetchGenerationRef.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
     []
@@ -217,29 +239,15 @@ const Showroom = () => {
     
     let finalStoneType = '';
     
-    // Tìm tên loại đá khớp trong danh sách (case-insensitive, có thể có biến thể)
+    // Khớp loại đá từ URL với danh sách API — chỉ khớp đúng (sau chuẩn hóa), không dùng includes()
+    // (includes hai chiều dễ map nhầm sang tên dài hơn / loại khác → API nhận sai stoneType).
     if (decodedStoneType) {
       if (stoneTypes.length > 0) {
-        // Normalize để so sánh (loại bỏ "Đá" prefix và khoảng trắng thừa)
-        const normalize = (str: string) => str.toLowerCase().trim().replace(/^đá\s+/, '');
-        const normalizedUrl = normalize(decodedStoneType);
-        
-        const matchedStoneType = stoneTypes.find((type) => {
-          const normalizedType = normalize(type.name);
-          return (
-            normalizedType === normalizedUrl ||
-            normalizedType.includes(normalizedUrl) ||
-            normalizedUrl.includes(normalizedType)
-          );
-        });
-        
-        if (matchedStoneType) {
-          // Sử dụng tên chính xác từ API để đảm bảo filter hoạt động đúng
-          finalStoneType = matchedStoneType.name;
-        } else {
-          // Nếu không tìm thấy khớp, thử dùng giá trị từ URL (có thể backend sẽ xử lý)
-          finalStoneType = decodedStoneType;
-        }
+        const keyFromUrl = normalizeStoneLabelForMatch(decodedStoneType);
+        const exactMatch = stoneTypes.find(
+          (type) => normalizeStoneLabelForMatch(type.name) === keyFromUrl
+        );
+        finalStoneType = exactMatch ? exactMatch.name : decodedStoneType;
       } else {
         // Nếu stoneTypes chưa load xong, dùng giá trị từ URL tạm thời
         finalStoneType = decodedStoneType;
@@ -268,6 +276,8 @@ const Showroom = () => {
   useEffect(() => {
     if (!hasInitializedFromUrlRef.current) return;
     loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
+    // Chỉ kích hoạt khi đổi page size sau khi đã init; filter/URL xử lý ở effect khác.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPageSize]);
 
   // Sync refs theo state hiện tại
@@ -441,7 +451,14 @@ const Showroom = () => {
       }
     });
     return unsubscribe;
-  }, [loadFirstPage, queryClient, selectedStoneType, selectedBeMat, selectedWallPosition]);
+  }, [
+    loadFirstPage,
+    queryClient,
+    selectedStoneType,
+    selectedBeMat,
+    selectedWallPosition,
+    selectedPageSize,
+  ]);
 
   // Giữ modal chi tiết khớp bản ghi trong danh sách sau khi merge realtime
   useEffect(() => {
@@ -613,6 +630,17 @@ const Showroom = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isMobileFiltersOpen]);
 
+  /** Tránh cuộn nền khi panel lọc (mobile) mở — giảm scroll chaining / tap trượt. */
+  useEffect(() => {
+    if (!isMobileFiltersOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMobileFiltersOpen]);
+
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)');
     const updateToolbarForViewport = (matches: boolean) => {
@@ -680,7 +708,6 @@ const Showroom = () => {
                     triggerMobileTapFeedback();
                     setIsMobileFiltersOpen(true);
                   }}
-                  aria-expanded={isMobileFiltersOpen}
                   aria-controls="showroom-filter-panel"
                 >
                   Bộ lọc {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
@@ -820,7 +847,6 @@ const Showroom = () => {
                             setSelectedWallPosition([]);
                             syncWallPositions([]);
                           }}
-                          aria-pressed={selectedWallPosition.length === 0}
                         >
                           Tất cả
                         </button>
@@ -832,7 +858,6 @@ const Showroom = () => {
                               type="button"
                               className={`filter-chip ${selected ? 'is-selected' : ''}`}
                               onClick={() => toggleWallPosition(position)}
-                              aria-pressed={selected}
                             >
                               {position}
                             </button>
@@ -849,7 +874,6 @@ const Showroom = () => {
                               type="button"
                               className={`filter-chip ${selected ? 'is-selected' : ''}`}
                               onClick={() => toggleWallPosition(position)}
-                              aria-pressed={selected}
                             >
                               {position}
                             </button>
@@ -1016,14 +1040,15 @@ const Showroom = () => {
                         <button
                           key={image._id}
                           type="button"
-                          className={`gallery-item ${
-                            justAppendedIds.has(image._id) ? 'is-new' : ''
-                          }`}
-                          style={
+                          className={[
+                            'gallery-item',
+                            justAppendedIds.has(image._id) ? 'is-new' : '',
                             justAppendedIds.has(image._id)
-                              ? ({ ['--enter-delay' as never]: `${Math.min(10, idx) * 35}ms` } as CSSProperties)
-                              : undefined
-                          }
+                              ? `gallery-item-enter-d${Math.min(10, idx)}`
+                              : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
                           onClick={() => setSelectedImage(image)}
                           aria-label={`Xem chi tiết ${image.name}`}
                         >

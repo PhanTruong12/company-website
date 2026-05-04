@@ -10,6 +10,14 @@ import type { InteriorImage } from '../../../shared/types';
 /** Kích thước trang showroom (load more) — khớp mặc định backend */
 export const SHOWROOM_PAGE_SIZE = 12;
 
+/**
+ * Mỗi request GET /interior-images bị giới hạn bởi Backend `PAGINATION.MAX_LIMIT` (100).
+ * Dùng khi cần lấy toàn bộ ảnh qua nhiều trang.
+ */
+export const INTERIOR_IMAGES_MAX_PAGE_SIZE = 100;
+
+const FETCH_ALL_MAX_PAGES = 500;
+
 export type InteriorImagesPageResult = {
   images: InteriorImage[];
   pagination: Pagination;
@@ -58,6 +66,35 @@ export const getInteriorImages = async (
   } catch (error) {
     throw handleApiError(error);
   }
+};
+
+/**
+ * Lấy toàn bộ ảnh nội thất khớp filter (gọi lặp theo trang cho đến hết).
+ * Public API mỗi trang tối đa {@link INTERIOR_IMAGES_MAX_PAGE_SIZE} bản ghi.
+ */
+export const fetchAllInteriorImages = async (
+  stoneType?: string,
+  be_mat?: string,
+  wallPosition?: string | string[]
+): Promise<InteriorImage[]> => {
+  const limit = INTERIOR_IMAGES_MAX_PAGE_SIZE;
+  const accumulated: InteriorImage[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const { images, pagination } = await getInteriorImages(stoneType, be_mat, wallPosition, page, limit);
+    accumulated.push(...images);
+    totalPages = pagination.totalPages > 0 ? pagination.totalPages : 1;
+
+    if (images.length === 0) {
+      break;
+    }
+
+    page += 1;
+  } while (page <= totalPages && page <= FETCH_ALL_MAX_PAGES);
+
+  return accumulated;
 };
 
 /**

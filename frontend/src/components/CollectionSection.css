@@ -1,0 +1,255 @@
+.stone-collection-section {
+  background: #454545;
+  padding: 32px 16px 56px;
+  margin-top: 0;
+}
+
+@media (min-width: 1024px) {
+  .stone-collection-section {
+    padding: 48px 32px 72px;
+  }
+}
+
+.stone-collection-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stone-collection-header {
+  max-width: 860px;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .stone-collection-header {
+    margin-bottom: 24px;
+  }
+}
+
+.stone-collection-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 1024px) {
+  .stone-collection-title {
+    font-size: 2.2rem;
+  }
+}
+
+.stone-category-tab:focus-visible,
+.stone-3d-carousel-control:focus-visible,
+.stone-3d-carousel-stage:focus-visible,
+.stone-3d-carousel-dot:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.stone-category-tabs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 8px;
+  margin: 0 auto 12px;
+  max-width: 1400px;
+}
+
+.stone-category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.stone-category-tab {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.stone-category-tab.is-active {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: #ffffff;
+}
+
+.stone-collection-carousel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+@media (min-width: 1024px) {
+  .stone-collection-carousel-stack {
+    gap: 48px;
+  }
+}
+
+.stone-collection-carousel-stack-item {
+  margin: 0;
+}
+
+.stone-collection-status {
+  padding: 24px 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  font-weight: 600;
+}
+
+.stone-collection-status--error {
+  background: rgba(127, 29, 29, 0.3);
+}
+
+.stone-3d-carousel {
+  width: 100%;
+}
+
+.stone-3d-carousel-head {
+  margin: 0 0 8px;
+  text-align: center;
+}
+
+.stone-3d-carousel-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.stone-3d-carousel-control {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.stone-3d-carousel-control--prev,
+.stone-3d-carousel-control--next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+}
+
+.stone-3d-carousel-control--prev {
+  left: 14px;
+}
+
+.stone-3d-carousel-control--next {
+  right: 14px;
+}
+
+@media (max-width: 767px) {
+  .stone-3d-carousel-control--prev,
+  .stone-3d-carousel-control--next {
+    display: none;
+  }
+}
+
+.stone-3d-carousel-stage {
+  position: relative;
+  width: 100%;
+  height: clamp(280px, 58vw, 360px);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #0d1125 0%, #080b17 100%);
+  overflow: hidden;
+  /* Mobile: trình duyệt ưu tiên cuộn dọc trang; vuốt ngang giao cho JS (Pointer Events) */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior-x: contain;
+}
+
+@media (min-width: 768px) {
+  .stone-3d-carousel-stage {
+    height: 420px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .stone-3d-carousel-stage {
+    height: clamp(520px, 52vw, 620px);
+  }
+}
+
+.stone-3d-carousel-empty {
+  min-height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  text-align: center;
+}
+
+.stone-3d-carousel-track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+.stone-3d-carousel-slide {
+  flex-shrink: 0;
+  height: 100%;
+  min-width: 0;
+}
+
+.stone-3d-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.stone-3d-carousel-dots {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.stone-3d-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  padding: 0;
+}
+
+.stone-3d-carousel-dot.is-active {
+  width: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.stone-collection-cta {
+  margin-top: 28px;
+}
+
