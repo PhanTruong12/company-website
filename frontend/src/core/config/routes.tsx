@@ -8,7 +8,6 @@ import BlogDetail from '../../pages/BlogDetail';
 import CollectionRedirect from '../../pages/CollectionRedirect';
 import Showroom from '../../pages/Showroom';
 import { ShowroomDetail } from '../../pages/ShowroomDetail';
-import { Visualizer } from '../../features/visualizer/pages/Visualizer';
 import AdminLogin from '../../pages/admin/AdminLogin';
 import AdminImages from '../../pages/admin/AdminImages';
 import AdminBlogs from '../../pages/admin/AdminBlogs';
@@ -33,7 +32,6 @@ export const publicRoutes: RouteConfig[] = [
   { path: '/collection/:collectionId', element: <CollectionRedirect />, type: 'public' },
   { path: '/showroom', element: <Showroom />, type: 'public' },
   { path: '/showroom/:slug', element: <ShowroomDetail />, type: 'public' },
-  { path: '/visualizer', element: <Visualizer />, type: 'public' },
 ];
 
 export const adminRoutes: RouteConfig[] = [

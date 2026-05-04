@@ -14,7 +14,7 @@ const HeroSection = () => {
           <div className="info-block">
             <div className="info-content">
               <h1 className="company-name">
-                Công Ty TNHH TM&TK Tường Nhà Đẹp
+                Công Ty TNHH TM&TK TND Granite
               </h1>
               
               {/* Services Text - Smaller, italic */}

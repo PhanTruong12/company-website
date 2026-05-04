@@ -41,10 +41,12 @@
   }
 }
 
-.stone-category-tab:focus-visible,
-.stone-3d-carousel-control:focus-visible,
-.stone-3d-carousel-stage:focus-visible,
-.stone-3d-carousel-dot:focus-visible {
+.stone-category-tab:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.stone-gallery-strip-track:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.35);
   outline-offset: 2px;
 }
@@ -90,12 +92,17 @@
 
 @media (min-width: 1024px) {
   .stone-collection-carousel-stack {
-    gap: 48px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
   }
 }
 
 .stone-collection-carousel-stack-item {
   margin: 0;
+  min-width: 0;
+  animation: collection-section-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(min(var(--collection-index, 0), 5) * 45ms);
 }
 
 .stone-collection-status {
@@ -111,113 +118,48 @@
   background: rgba(127, 29, 29, 0.3);
 }
 
-.stone-3d-carousel {
+/* --- Bộ sưu tập theo nhóm: mobile = strip + scroll-snap; desktop = grid --- */
+
+.stone-collection-category {
   width: 100%;
 }
 
-.stone-3d-carousel-head {
-  margin: 0 0 8px;
+.stone-collection-category-head {
+  margin: 0 0 12px;
   text-align: center;
 }
 
-.stone-3d-carousel-title {
+.stone-collection-category-title {
   margin: 0;
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: 800;
 }
 
-.stone-3d-carousel-control {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-  font-size: 1.8rem;
-  line-height: 1;
-  cursor: pointer;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.stone-3d-carousel-control--prev,
-.stone-3d-carousel-control--next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 30;
-}
-
-.stone-3d-carousel-control--prev {
-  left: 14px;
-}
-
-.stone-3d-carousel-control--next {
-  right: 14px;
-}
-
-@media (max-width: 767px) {
-  .stone-3d-carousel-control--prev,
-  .stone-3d-carousel-control--next {
-    display: none;
-  }
-}
-
-.stone-3d-carousel-stage {
-  position: relative;
-  width: 100%;
-  height: clamp(280px, 58vw, 360px);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0)),
-    linear-gradient(180deg, #0d1125 0%, #080b17 100%);
-  overflow: hidden;
-  /* Mobile: trình duyệt ưu tiên cuộn dọc trang; vuốt ngang giao cho JS (Pointer Events) */
-  touch-action: pan-y;
-  -webkit-user-select: none;
-  user-select: none;
-  overscroll-behavior-x: contain;
-}
-
-@media (min-width: 768px) {
-  .stone-3d-carousel-stage {
-    height: 420px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .stone-3d-carousel-stage {
-    height: clamp(520px, 52vw, 620px);
-  }
-}
-
-.stone-3d-carousel-empty {
-  min-height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
+.stone-collection-empty {
+  padding: 24px 18px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.78);
   text-align: center;
+  font-weight: 600;
 }
 
-.stone-3d-carousel-track {
-  display: flex;
+.stone-collection-media {
+  width: 100%;
   height: 100%;
-  will-change: transform;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.08), transparent 55%),
+    linear-gradient(180deg, #1a1f33 0%, #0d1125 100%);
 }
 
-.stone-3d-carousel-slide {
-  flex-shrink: 0;
-  height: 100%;
-  min-width: 0;
-}
-
-.stone-3d-carousel-slide img {
+.stone-collection-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -225,31 +167,303 @@
   display: block;
 }
 
-.stone-3d-carousel-dots {
-  margin-top: 14px;
+/* Mobile / tablet: full-bleed ngang + scroll-snap */
+.stone-gallery-strip {
+  display: block;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.stone-gallery-strip-track {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 12px;
+  padding-inline: max(16px, calc((100vw - min(88vw, 520px)) / 2));
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: max(16px, calc((100vw - min(88vw, 520px)) / 2));
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+}
+
+.stone-gallery-strip-track::-webkit-scrollbar {
+  display: none;
+}
+
+.stone-gallery-strip-slide {
+  flex: 0 0 min(88vw, 480px);
+  width: min(88vw, 480px);
+  max-width: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  aspect-ratio: 16 / 10;
+}
+
+.stone-gallery-strip-slide .stone-collection-media {
+  height: 100%;
+}
+
+.stone-gallery-fullscreen-trigger {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  cursor: zoom-in;
+  display: block;
+}
+
+.stone-gallery-fullscreen-trigger:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 3px;
+}
+
+.stone-gallery-fullscreen-trigger .stone-collection-img {
+  pointer-events: none;
+}
+
+.stone-gallery-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
-.stone-3d-carousel-dot {
-  width: 8px;
-  height: 8px;
+.stone-gallery-fullscreen-close {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 50%;
-  border: 0;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(20, 20, 20, 0.62);
+  color: #ffffff;
+  font-size: 2rem;
+  line-height: 1;
   cursor: pointer;
-  padding: 0;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
-.stone-3d-carousel-dot.is-active {
-  width: 18px;
-  border-radius: 999px;
-  background: #ffffff;
+.stone-gallery-fullscreen-close:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 3px;
+}
+
+.stone-gallery-fullscreen-figure {
+  width: 100%;
+  max-width: 980px;
+  max-height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.stone-gallery-fullscreen-img {
+  max-width: 100%;
+  max-height: calc(100vh - 104px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  object-fit: contain;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
+}
+
+.stone-gallery-fullscreen-caption {
+  max-width: min(92vw, 720px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .stone-collection-media {
+    box-shadow:
+      0 6px 16px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  .stone-gallery-fullscreen {
+    background: rgba(0, 0, 0, 0.94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .stone-gallery-fullscreen-close {
+    background: rgba(20, 20, 20, 0.84);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .stone-gallery-fullscreen-img {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Desktop: an strip, hien grid carousel tu chay */
+.stone-gallery-desktop-carousel {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .stone-collection-category-head {
+    display: none;
+  }
+
+  .stone-gallery-strip {
+    display: none;
+  }
+
+  .stone-gallery-fullscreen {
+    display: none;
+  }
+
+  .stone-gallery-desktop-carousel {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 260px;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+      0 18px 42px rgba(0, 0, 0, 0.26),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    background:
+      radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.1), transparent 58%),
+      linear-gradient(180deg, #1a1f33 0%, #0d1125 100%);
+  }
+
+  .stone-gallery-desktop-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(1.035) translateX(10px);
+    transition:
+      opacity 1.15s ease,
+      transform 4.4s ease;
+    will-change: opacity, transform;
+  }
+
+  .stone-gallery-desktop-slide.is-active,
+  .stone-gallery-desktop-carousel.is-single .stone-gallery-desktop-slide {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+
+  .stone-gallery-desktop-carousel.is-single .stone-gallery-desktop-slide {
+    transition: none;
+  }
+
+  .stone-gallery-desktop-slide .stone-collection-media {
+    height: 100%;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .stone-gallery-desktop-meta {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 44px 18px 16px;
+    color: #ffffff;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.66) 100%);
+    pointer-events: none;
+  }
+
+  .stone-gallery-desktop-name {
+    min-width: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .stone-gallery-desktop-count {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    pointer-events: auto;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .stone-gallery-desktop-count:hover {
+    background: #ffffff;
+    color: #1f2937;
+    transform: translateY(-1px);
+  }
+
+  .stone-gallery-desktop-count:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.55);
+    outline-offset: 3px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .stone-collection-carousel-stack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stone-collection-carousel-stack-item,
+  .stone-gallery-desktop-slide {
+    animation: none;
+    transition: none;
+  }
+
+  .stone-gallery-desktop-slide.is-active {
+    opacity: 1;
+  }
 }
 
 .stone-collection-cta {
   margin-top: 28px;
 }
 
+@keyframes collection-section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -14,7 +14,7 @@ const Contact = () => {
       <div className="contact-container">
         {/* H1 - Tiêu đề chính */}
         <header className="contact-header">
-          <h1 className="contact-h1">Liên hệ Công Ty TNHH TM & TK Tường Nhà Đẹp tại Đà Nẵng</h1>
+          <h1 className="contact-h1">Liên hệ Công Ty TNHH TM & TK TND Granite tại Đà Nẵng</h1>
         </header>
 
         {/* H2 - Thông tin liên hệ */}
@@ -137,10 +137,10 @@ const Contact = () => {
 
         {/* H2 - Vị trí cửa hàng */}
         <section className="contact-section">
-          <h2 className="contact-h2">Vị trí cửa hàng Tường Nhà Đẹp tại Quận Cẩm Lệ – Đà Nẵng</h2>
+          <h2 className="contact-h2">Vị trí cửa hàng TND Granite tại Quận Cẩm Lệ – Đà Nẵng</h2>
           <div className="location-content">
             <p className="location-description">
-              Cửa hàng vật liệu xây dựng Tường Nhà Đẹp tọa lạc tại số 77 Võ Chí Công, Phường Hoà Xuân, 
+              Cửa hàng vật liệu xây dựng TND Granite tọa lạc tại số 77 Võ Chí Công, Phường Hoà Xuân, 
               Quận Cẩm Lệ, TP Đà Nẵng. Vị trí thuận tiện, dễ dàng tìm kiếm, phù hợp cho khách hàng 
               tại Đà Nẵng và các khu vực lân cận đến tham quan showroom và lựa chọn các sản phẩm đá granite, 
               đá marble, đá nung kết và đá thạch anh cao cấp.
@@ -159,7 +159,7 @@ const Contact = () => {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Vị trí cửa hàng Tường Nhà Đẹp tại Đà Nẵng"
+              title="Vị trí cửa hàng TND Granite tại Đà Nẵng"
             />
             <div className="map-actions">
               <a 

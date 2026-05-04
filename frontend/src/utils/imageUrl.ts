@@ -73,10 +73,28 @@ export interface ImageUrlOptions {
 }
 
 /**
+ * Tạo `srcset` cho ảnh Cloudinary (nhiều `w`). Trả `undefined` nếu không phải Cloudinary — chỉ dùng `src`.
+ * Dùng cùng thuộc tính `sizes` trên `<img>` để trình duyệt chọn bản phù hợp.
+ */
+export function buildCloudinarySrcSetFromWidths(
+  imageUrl: string | undefined | null,
+  widths: readonly number[],
+  heightForWidth: (w: number) => number,
+  extra?: Omit<ImageUrlOptions, 'width' | 'height'>
+): string | undefined {
+  if (!imageUrl || !isCloudinaryUrl(imageUrl)) return undefined;
+  return widths
+    .map((w) => {
+      const h = heightForWidth(w);
+      const url = getImageUrl(imageUrl, { width: w, height: h, crop: 'fill', ...extra });
+      return `${url} ${w}w`;
+    })
+    .join(', ');
+}
+
+/**
  * Chuyển đổi imageUrl từ backend thành URL đầy đủ để hiển thị.
  * Nếu là Cloudinary và truyền options (vd. width), URL sẽ dùng transform để tối ưu tải.
- * @param imageUrl - URL từ backend (Cloudinary hoặc relative path)
- * @param options - Tùy chọn transform (chỉ áp dụng cho Cloudinary): width, height, crop, quality, format
  */
 export function getImageUrl(
   imageUrl: string | undefined | null,

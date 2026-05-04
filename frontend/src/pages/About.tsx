@@ -8,7 +8,7 @@ const About = () => {
       <div className="about-container">
         {/* H1 - Tiêu đề chính */}
         <header className="about-header">
-          <h1 className="about-h1">Giới thiệu Công Ty TNHH TM & TK Tường Nhà Đẹp</h1>
+          <h1 className="about-h1">Giới thiệu Công Ty TNHH TM & TK TND Granite</h1>
           <div className="about-hero-image">
             <img 
               src={publicAsset('about1.jpg')} 
@@ -21,17 +21,17 @@ const About = () => {
 
         {/* H2 - Tổng quan */}
         <section className="about-section">
-          <h2 className="about-h2">Tổng quan về Tường Nhà Đẹp</h2>
+          <h2 className="about-h2">Tổng quan về TND Granite</h2>
           <div className="about-content-with-image">
             <div className="about-text">
               <p>
-                Công Ty TNHH TM & TK Tường Nhà Đẹp là đơn vị chuyên cung cấp, thi công và lắp đặt đá ốp lát cao cấp, 
+                Công Ty TNHH TM & TK TND Granite là đơn vị chuyên cung cấp, thi công và lắp đặt đá ốp lát cao cấp, 
                 mang đến những giải pháp hoàn hảo cho không gian sống và làm việc. Với định hướng hoạt động tập trung 
                 vào chất lượng và thẩm mỹ, chúng tôi cam kết mang đến cho khách hàng những sản phẩm đá tự nhiên và nhân tạo 
                 đẳng cấp, kết hợp cùng dịch vụ thi công chuyên nghiệp.
               </p>
               <p>
-                Giá trị cốt lõi của Tường Nhà Đẹp nằm ở việc tạo ra những không gian đẹp mắt, sang trọng với độ bền vượt trội 
+                Giá trị cốt lõi của TND Granite nằm ở việc tạo ra những không gian đẹp mắt, sang trọng với độ bền vượt trội 
                 theo thời gian. Mỗi công trình được thực hiện đều được đảm bảo về mặt kỹ thuật, thẩm mỹ và tính ứng dụng thực tế, 
                 đáp ứng mọi nhu cầu từ thi công đá ốp lát nội thất đến ngoại thất.
               </p>
@@ -55,7 +55,7 @@ const About = () => {
           <div className="about-content-with-image">
             <div className="about-text">
               <p>
-                Quy trình làm việc tại Tường Nhà Đẹp được xây dựng trên nền tảng chuyên nghiệp và khoa học, đảm bảo từng 
+                Quy trình làm việc tại TND Granite được xây dựng trên nền tảng chuyên nghiệp và khoa học, đảm bảo từng 
                 bước được thực hiện một cách chính xác và hiệu quả. Bắt đầu từ việc tư vấn và khảo sát công trình, chúng tôi 
                 phân tích không gian, đề xuất giải pháp phù hợp với công năng sử dụng và ngân sách của khách hàng.
               </p>
@@ -78,7 +78,7 @@ const About = () => {
 
         {/* H2 - Các dòng đá */}
         <section className="about-section">
-          <h2 className="about-h2">Các dòng đá cao cấp Tường Nhà Đẹp cung cấp</h2>
+          <h2 className="about-h2">Các dòng đá cao cấp TND Granite cung cấp</h2>
 
           <div className="stone-types-grid">
             <div className="stone-type-item">
@@ -165,7 +165,7 @@ const About = () => {
                 cao cấp, được nhập khẩu và kiểm định chất lượng nghiêm ngặt, đảm bảo độ bền và vẻ đẹp lâu dài.
               </p>
               <p>
-                <strong>Tư vấn phù hợp công năng & ngân sách:</strong> Với đội ngũ tư vấn chuyên nghiệp, Tường Nhà Đẹp giúp khách hàng 
+                <strong>Tư vấn phù hợp công năng & ngân sách:</strong> Với đội ngũ tư vấn chuyên nghiệp, TND Granite giúp khách hàng 
                 lựa chọn giải pháp tối ưu nhất, cân bằng giữa yêu cầu thẩm mỹ, công năng sử dụng và ngân sách đầu tư.
               </p>
             </div>
@@ -193,7 +193,7 @@ const About = () => {
               vật liệu và công cụ chuyên dụng, đảm bảo độ bền và tính thẩm mỹ lâu dài cho không gian của khách hàng.
             </p>
             <p>
-              <strong>Cam kết về tính thẩm mỹ và độ bền lâu dài:</strong> Tường Nhà Đẹp cam kết mang đến những không gian đẹp mắt, 
+              <strong>Cam kết về tính thẩm mỹ và độ bền lâu dài:</strong> TND Granite cam kết mang đến những không gian đẹp mắt, 
               sang trọng với độ bền vượt trội theo thời gian. Chúng tôi không chỉ thi công mà còn đồng hành cùng khách hàng trong 
               việc bảo trì và chăm sóc công trình sau khi hoàn thiện.
             </p>

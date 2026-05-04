@@ -603,7 +603,7 @@ const Showroom = () => {
     images.length < listMeta.total;
 
   const buildGallerySrcSet = (imageUrl: string | undefined | null): string =>
-    [320, 480, 640, 900]
+    [280, 360, 480, 640, 768, 960]
       .map((width) => `${getImageUrl(imageUrl, { width, crop: 'fill' })} ${width}w`)
       .join(', ');
 
@@ -1054,9 +1054,9 @@ const Showroom = () => {
                         >
                           <div className="gallery-image-wrapper">
                             <img
-                              src={getImageUrl(image.imageUrl, { width: 640, crop: 'fill' })}
+                              src={getImageUrl(image.imageUrl, { width: 480, crop: 'fill' })}
                               srcSet={buildGallerySrcSet(image.imageUrl)}
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              sizes="(max-width: 768px) calc(100vw - 4px), (max-width: 1200px) 50vw, 25vw"
                               alt={image.name}
                               className="gallery-image"
                               loading="lazy"
@@ -1197,4 +1197,3 @@ const Showroom = () => {
 };
 
 export default Showroom;
-

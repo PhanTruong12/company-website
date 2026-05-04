@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAllInteriorImages } from '../features/showroom/api';
 import type { InteriorImage } from '../shared/types';
@@ -19,6 +19,23 @@ const getImageWallPositions = (img: InteriorImage): string[] => {
   const source = img.wallPosition;
   const raw = Array.isArray(source) ? source : [String(source)];
   return raw.map((item) => String(item).trim()).filter(Boolean);
+};
+
+const buildShowroomFilterHref = (stoneTypeFilters: string[], wallPositionFilters: string[]) => {
+  const params = new URLSearchParams();
+  const primaryStoneType = stoneTypeFilters.find((value) => value.trim().length > 0);
+
+  if (primaryStoneType) {
+    params.set('stoneType', primaryStoneType);
+  }
+
+  const wallPositions = wallPositionFilters.map((value) => value.trim()).filter(Boolean);
+  if (wallPositions.length > 0) {
+    params.set('wallPosition', wallPositions.join(','));
+  }
+
+  const query = params.toString();
+  return query ? `/showroom?${query}` : '/showroom';
 };
 
 export const StoneCollectionSection = () => {
@@ -67,6 +84,10 @@ export const StoneCollectionSection = () => {
       return {
         ...category,
         items,
+        showroomHref: buildShowroomFilterHref(
+          category.stoneTypeFilters,
+          category.wallPositionFilters
+        ),
       };
     });
   }, [data]);
@@ -76,10 +97,6 @@ export const StoneCollectionSection = () => {
   return (
     <section className="stone-collection-section">
       <div className="stone-collection-container">
-        <header className="stone-collection-header">
-          <h2 className="stone-collection-title">Bộ sưu tập đá</h2>
-        </header>
-
         {isLoading ? (
           <div className="stone-collection-status">Đang tải dữ liệu bộ sưu tập...</div>
         ) : error ? (
@@ -88,9 +105,17 @@ export const StoneCollectionSection = () => {
           </div>
         ) : (
           <div className="stone-collection-carousel-stack">
-            {categoriesWithItems.map((category) => (
-              <article key={category.id} className="stone-collection-carousel-stack-item">
-                <Stone3DCarousel categoryName={category.name} items={category.items} />
+            {categoriesWithItems.map((category, index) => (
+              <article
+                key={category.id}
+                className="stone-collection-carousel-stack-item"
+                style={{ '--collection-index': index } as CSSProperties}
+              >
+                <Stone3DCarousel
+                  categoryName={category.name}
+                  items={category.items}
+                  showroomHref={category.showroomHref}
+                />
               </article>
             ))}
           </div>
@@ -105,4 +130,3 @@ export const StoneCollectionSection = () => {
 const CollectionSection = () => <StoneCollectionSection />;
 
 export default CollectionSection;
-

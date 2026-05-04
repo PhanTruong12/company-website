@@ -46,7 +46,7 @@ const AppContent = () => {
   return (
     <div className="app-container">
       {!shouldHideHeaderFooter && <Header />}
-      <main className="main-content-wrapper">
+      <main key={location.pathname} className="main-content-wrapper">
         <Routes>
           {allRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />

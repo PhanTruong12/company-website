@@ -1,5 +1,4 @@
-import { FaFacebook, FaPhone } from 'react-icons/fa';
-import { Logo } from '../components/Logo';
+import { FaFacebook } from 'react-icons/fa';
 import './Home.css';
 
 const Home = () => {
@@ -12,16 +11,6 @@ const Home = () => {
         {/* Main Content Section */}
         <div className="main-container">
           <div className="main-content">
-            {/* Logo Block */}
-            <div className="logo-section">
-              <Logo 
-                size="xlarge" 
-                variant="dark" 
-                showBackground={true}
-                className="home-logo"
-              />
-            </div>
-
             {/* Company Information */}
             <div className="info-section">
               <div className="info-content">
@@ -50,39 +39,6 @@ const Home = () => {
             </div>
           </div>
         </div>
-
-        {/* Phone button standalone */}
-        <div className="call-center">
-          <a 
-            href="tel:0935789363"
-            className="phone-button phone-button-small"
-          >
-            0935.789.363
-          </a>
-        </div>
-
-        {/* Phone Icon - Floating on right edge */}
-        <div className="phone-float">
-          <a 
-            href="tel:0935789363"
-            className="phone-float-link"
-            aria-label="Call us"
-          >
-            <FaPhone size={26} />
-          </a>
-        </div>
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
         {/* Facebook Icon - Bottom Right */}
         <div className="facebook-float">
