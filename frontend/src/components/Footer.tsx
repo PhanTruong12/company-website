@@ -25,7 +25,7 @@ export const Footer = () => {
               Cung Cấp - Thi Công - Lắp Đặt
             </p>
             <p className="footer-stone-types">
-              Đá Granite • Đá Marble • Đá Nung Kết • Đá Thạch Anh • Đá Solid Surface
+              Đá Granite • Đá Marble • Đá Nung Kết • Đá Thạch Anh • Solid Surface
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export const Footer = () => {
                 <Link to="/showroom?stoneType=Tự Nhiên">Đá Tự Nhiên</Link>
               </li>
               <li>
-                <Link to="/showroom?stoneType=Solid%20Surface">Đá Solid Surface</Link>
+                <Link to="/showroom?stoneType=Solid%20Surface">Solid Surface</Link>
               </li>
               <li>
                 <Link to="/showroom">Xem Tất Cả</Link>
@@ -141,4 +141,3 @@ export const Footer = () => {
     </footer>
   );
 };
-

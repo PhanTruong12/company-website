@@ -1,16 +1,34 @@
 .stone-collection-section {
   background: #454545;
-  padding: 32px 16px 56px;
+  padding: 24px 16px 40px;
   margin-top: 0;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+}
+
+.stone-collection-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.42;
 }
 
 @media (min-width: 1024px) {
   .stone-collection-section {
-    padding: 48px 32px 72px;
+    padding: 34px 32px 52px;
   }
 }
 
 .stone-collection-container {
+  position: relative;
+  z-index: 1;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -87,14 +105,14 @@
 .stone-collection-carousel-stack {
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  gap: 26px;
 }
 
 @media (min-width: 1024px) {
   .stone-collection-carousel-stack {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px;
+    gap: 16px;
   }
 }
 
@@ -436,7 +454,7 @@
 @media (min-width: 1280px) {
   .stone-collection-carousel-stack {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
+    gap: 18px;
   }
 }
 
@@ -453,7 +471,7 @@
 }
 
 .stone-collection-cta {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 @keyframes collection-section-enter {
@@ -464,6 +482,6 @@
 
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }

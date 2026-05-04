@@ -196,10 +196,9 @@ export const stoneCollectionCategories: StoneCollectionCategory[] = [
   },
   {
     id: 'solid-surface',
-    name: 'Đá Solid Surface',
+    name: 'Solid Surface',
     description: 'Mẫu Solid Surface cho lavabo, quầy, bếp và nội thất hiện đại.',
     stoneTypeFilters: ['Solid Surface'],
     wallPositionFilters: [],
   },
 ];
-

@@ -30,9 +30,16 @@ const Home = () => {
                 
                 {/* Stone Types */}
                 <div>
-                  <p className="stone-types">
-                    Đá Granite-Đá Marble-Đá Nung Kết-Đá Thạch Anh
-                  </p>
+                  <div className="stone-types" aria-label="Các dòng đá chính">
+                    <div className="stone-types-row">
+                      <span>Đá Granite</span>
+                      <span>Đá Marble</span>
+                    </div>
+                    <div className="stone-types-row">
+                      <span>Đá Nung Kết</span>
+                      <span>Đá Thạch Anh</span>
+                    </div>
+                  </div>
                 </div>
 
               </div>

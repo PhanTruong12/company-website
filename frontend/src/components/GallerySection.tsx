@@ -1,109 +1,109 @@
-import { useRef, useState, useEffect } from 'react';
-import { publicAsset } from '../utils/publicAsset';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchAllInteriorImages } from '../features/showroom/api';
+import { getImageUrl } from '../utils/imageUrl';
 
-const galleryItems = [
-  { img: publicAsset('gallery1.jpg'), alt: 'Mẫu đá 1' },
-  { img: publicAsset('gallery2.jpg'), alt: 'Mẫu đá 2' },
-  { img: publicAsset('gallery3.jpg'), alt: 'Mẫu đá 3' },
-];
+const GALLERY_SRCSET_WIDTHS = [280, 360, 480, 640, 800] as const;
+
+const buildGallerySrcSet = (imageUrl: string | undefined | null): string =>
+  GALLERY_SRCSET_WIDTHS.map(
+    (width) => `${getImageUrl(imageUrl, { width, crop: 'fill' })} ${width}w`
+  ).join(', ');
 
 const GallerySection = () => {
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!carouselRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX);
-    setScrollLeft(carouselRef.current.scrollLeft);
-    if (carouselRef.current) {
-      carouselRef.current.style.cursor = 'grabbing';
-      carouselRef.current.style.scrollSnapType = 'none';
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-    if (carouselRef.current) {
-      carouselRef.current.style.cursor = 'grab';
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (carouselRef.current) {
-      carouselRef.current.style.cursor = 'grab';
-      carouselRef.current.style.scrollSnapType = 'x mandatory';
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX;
-    const walk = (x - startX) * 1.5; // Tốc độ kéo
-    carouselRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!carouselRef.current) return;
-    setIsDragging(true);
-    setStartX(e.touches[0].pageX);
-    setScrollLeft(carouselRef.current.scrollLeft);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !carouselRef.current) return;
-    const x = e.touches[0].pageX;
-    const walk = (x - startX) * 1.5;
-    carouselRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const [shouldLoadGallery, setShouldLoadGallery] = useState(false);
 
   useEffect(() => {
-    if (carouselRef.current) {
-      carouselRef.current.style.cursor = 'grab';
-    }
+    const section = sectionRef.current;
+    if (!section) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadGallery(true);
+          observer.disconnect();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '700px 0px',
+        threshold: 0,
+      }
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
   }, []);
 
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['home-gallery-images'],
+    queryFn: () => fetchAllInteriorImages(undefined, undefined, undefined),
+    staleTime: 5 * 60 * 1000,
+    enabled: shouldLoadGallery,
+  });
+
+  const galleryItems = useMemo(() => data ?? [], [data]);
+  const marqueeItems = useMemo(
+    () => (galleryItems.length > 0 ? [...galleryItems, ...galleryItems] : []),
+    [galleryItems]
+  );
+
+  if (shouldLoadGallery && !isLoading && !error && galleryItems.length === 0) return null;
+
   return (
-    <section className="gallery-section">
-      <div className="gallery-heading">
-        <h2>Hơn 150 mẫu đá cho bạn lựa chọn</h2>
-        <p>
-          TND Granite mang đến hơn 150 mẫu đá đa dạng, với thiết kế độc đáo và vân đá tinh xảo,
-          đáp ứng mọi phong cách nội thất.
-        </p>
-      </div>
-      <div className="gallery-carousel-wrapper">
-        <div className="gallery-carousel-container">
-          <div
-            ref={carouselRef}
-            className="gallery-carousel"
-            onMouseDown={handleMouseDown}
-            onMouseLeave={handleMouseLeave}
-            onMouseUp={handleMouseUp}
-            onMouseMove={handleMouseMove}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {galleryItems.map((item, idx) => (
-              <div className="gallery-card" key={`${item.img}-${idx}`}>
-                <img src={item.img} alt={item.alt} loading="lazy" />
-              </div>
-            ))}
-          </div>
+    <section ref={sectionRef} className="gallery-section">
+      <div className="gallery-heading-wrap">
+        <div className="gallery-heading">
+          <span className="gallery-eyebrow">Thư viện showroom</span>
+          <h2>
+            {!shouldLoadGallery || isLoading
+              ? 'Đang tải thư viện đá'
+              : '500+ mẫu đá cho bạn lựa chọn'}
+          </h2>
+          <p>
+            Các mẫu đá được cập nhật trực tiếp từ showroom, mang đến trải nghiệm chân thực về chất liệu, vân đá và ứng dụng thực tế trong từng khung hình liền mạch.
+          </p>
+        </div>
+        <div className="gallery-specs" aria-label="Thông tin thư viện">
+          <span>Ảnh thực tế</span>
+          <span>Tự động cập nhật</span>
         </div>
       </div>
+
+      {error ? (
+        <div className="gallery-status">Không thể tải thư viện ảnh lúc này.</div>
+      ) : (
+        <div className="gallery-carousel-wrapper">
+          <div className="gallery-carousel-container">
+            <div className="gallery-carousel" aria-label="Băng chuyền ảnh mẫu đá">
+              {!shouldLoadGallery || isLoading
+                ? Array.from({ length: 6 }).map((_, index) => (
+                    <div className="gallery-card gallery-card--loading" key={index} />
+                  ))
+                : marqueeItems.map((item, index) => (
+                    <div
+                      className="gallery-card"
+                      key={`${item._id}-${index}`}
+                      aria-hidden={index >= galleryItems.length}
+                    >
+                      <img
+                        src={getImageUrl(item.imageUrl, { width: 480, crop: 'fill' })}
+                        srcSet={buildGallerySrcSet(item.imageUrl)}
+                        sizes="(max-width: 640px) 76vw, (max-width: 1024px) 320px, 380px"
+                        alt={item.name}
+                        loading={index < 8 ? 'eager' : 'lazy'}
+                        fetchPriority={index < 8 ? 'high' : 'low'}
+                        decoding="async"
+                      />
+                    </div>
+                  ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
 
 export default GallerySection;
-
