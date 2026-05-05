@@ -1,6 +1,6 @@
 // ShowroomDropdown.tsx - Component dropdown showroom với filter options
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useStoneTypes } from '../../hooks/useStoneTypes';
 import { useWallPositions } from '../../hooks/useWallPositions';
 import { FaChevronDown } from 'react-icons/fa';
@@ -9,6 +9,8 @@ import './ShowroomDropdown.css';
 export const ShowroomDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const isShowroomActive = location.pathname === '/showroom';
 
   // Lấy dữ liệu từ React Query (đã cache)
   const { 
@@ -49,15 +51,25 @@ export const ShowroomDropdown = () => {
 
   return (
     <div className="showroom-dropdown" ref={dropdownRef}>
-      <button
-        className="showroom-dropdown-toggle"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        Showroom
-        <FaChevronDown className={`chevron ${isOpen ? 'open' : ''}`} />
-      </button>
+      <div className="showroom-dropdown-trigger">
+        <Link
+          to="/showroom"
+          className={`showroom-nav-link ${isShowroomActive ? 'active' : ''}`}
+          onClick={() => setIsOpen(false)}
+        >
+          Showroom
+        </Link>
+        <button
+          type="button"
+          className="showroom-dropdown-toggle"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+          aria-label={isOpen ? 'Đóng bộ lọc showroom' : 'Mở bộ lọc showroom'}
+        >
+          <FaChevronDown className={`chevron ${isOpen ? 'open' : ''}`} />
+        </button>
+      </div>
 
       {isOpen && (
         <div className="showroom-dropdown-menu">

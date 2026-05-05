@@ -3,30 +3,72 @@
   position: relative;
 }
 
+.showroom-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.showroom-nav-link {
+  padding: 8px 12px 8px 16px;
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.925rem;
+  letter-spacing: 0.01em;
+  border-radius: 10px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  position: relative;
+}
+
+.showroom-nav-link:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: #111827;
+}
+
+.showroom-nav-link.active {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.showroom-nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: #0f766e;
+  border-radius: 999px;
+}
+
 .showroom-dropdown-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   background: none;
-  border: none;
-  color: #333;
+  border: 1px solid transparent;
+  color: #4b5563;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s;
+  border-radius: 10px;
+  transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .showroom-dropdown-toggle:hover {
-  background: rgba(30, 58, 95, 0.05);
-  color: #1e3a5f;
+  background: rgba(15, 23, 42, 0.04);
+  color: #111827;
 }
 
 .showroom-dropdown-toggle .chevron {
   font-size: 0.75rem;
-  transition: transform 0.3s;
+  transition: transform 0.2s ease;
   color: #666;
 }
 
@@ -222,11 +264,31 @@
     width: 100%;
   }
 
-  .showroom-dropdown-toggle {
-    width: 100%;
+  .showroom-dropdown-trigger {
+    gap: 8px;
+  }
+
+  .showroom-nav-link {
+    flex: 1;
     min-height: 44px;
-    justify-content: space-between;
+    display: flex;
+    align-items: center;
     padding: 10px 12px;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 10px;
+  }
+
+  .showroom-nav-link.active::after {
+    left: 12px;
+    transform: none;
+    bottom: 8px;
+    width: 18px;
+  }
+
+  .showroom-dropdown-toggle {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
     border: 1px solid rgba(15, 23, 42, 0.1);
     border-radius: 10px;
   }

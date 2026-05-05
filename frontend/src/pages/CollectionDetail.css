@@ -29,6 +29,17 @@
   margin: 0 0 16px;
 }
 
+@media (max-width: 767px) {
+  .collection-detail-title {
+    max-width: 20ch;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: clamp(1.35rem, 5.9vw, 1.72rem);
+    line-height: 1.28;
+    text-wrap: balance;
+  }
+}
+
 @media (min-width: 1024px) {
   .collection-detail-title {
     font-size: 2.25rem;

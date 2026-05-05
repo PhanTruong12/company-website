@@ -162,9 +162,9 @@ export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCa
             <Link
               to={showroomHref}
               className="stone-gallery-desktop-count"
-              aria-label={`Xem ${items.length} mẫu ${categoryName} trong showroom`}
+              aria-label={`xem thêm ${categoryName} trong showroom`}
             >
-              {items.length} mẫu
+              xem thêm
             </Link>
           </div>
         </div>

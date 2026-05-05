@@ -40,6 +40,27 @@
   font-style: italic;
 }
 
+@media (max-width: 767px) {
+  .showroom-title {
+    max-width: 22ch;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 10px;
+    font-size: clamp(1.45rem, 6.2vw, 1.95rem);
+    line-height: 1.24;
+    text-wrap: balance;
+  }
+
+  .showroom-subtitle {
+    max-width: 30ch;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: clamp(0.95rem, 4.1vw, 1.05rem);
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+}
+
 /* Filters - card style, 2 rows */
 .showroom-filters {
   margin-bottom: 14px;

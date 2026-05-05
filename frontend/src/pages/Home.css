@@ -412,6 +412,7 @@
   margin-bottom: 0;
   transition: color 0.3s ease, transform 0.3s ease;
   line-height: 1.25;
+  white-space: nowrap;
 }
 
 .services:hover {
@@ -422,6 +423,13 @@
 @media (min-width: 1024px) {
   .services {
     font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .services {
+    font-size: clamp(0.86rem, 4.4vw, 1.12rem);
+    letter-spacing: -0.01em;
   }
 }
 
@@ -724,6 +732,10 @@
 }
 
 @media (min-width: 1024px) {
+  .gallery-heading h2 {
+    white-space: nowrap;
+  }
+
   .gallery-heading p {
     font-size: 1.05rem;
   }
@@ -750,14 +762,16 @@
 }
 
 .gallery-carousel-wrapper {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 16px;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0;
 }
 
 @media (min-width: 1024px) {
   .gallery-carousel-wrapper {
-    padding: 0 32px;
+    padding: 0;
   }
 }
 
@@ -767,36 +781,19 @@
   display: block;
   position: relative;
   padding: 10px;
-  border: 1px solid rgba(31, 41, 55, 0.12);
-  border-radius: 18px;
+  border: 3px solid rgba(31, 41, 55, 0.75);
+  border-radius: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.34)),
     rgba(255, 255, 255, 0.42);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.82) inset,
     0 16px 38px rgba(31, 41, 55, 0.08);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
 }
 
 .gallery-carousel-container::before,
 .gallery-carousel-container::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: 16px;
-  z-index: 2;
-  width: 1px;
-  background: rgba(31, 41, 55, 0.12);
-  pointer-events: none;
-}
-
-.gallery-carousel-container::before {
-  left: 10px;
-}
-
-.gallery-carousel-container::after {
-  right: 10px;
+  content: none;
 }
 
 .gallery-carousel {
@@ -819,7 +816,7 @@
   flex-shrink: 0;
   width: min(76vw, 280px);
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.72);
   box-shadow:
     0 8px 20px -12px rgba(0, 0, 0, 0.22),
@@ -901,7 +898,7 @@
   }
 
   .gallery-carousel-container {
-    border-radius: 14px;
+    border-radius: 0;
     padding: 8px;
   }
 }

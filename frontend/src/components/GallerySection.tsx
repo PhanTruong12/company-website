@@ -59,7 +59,7 @@ const GallerySection = () => {
           <h2>
             {!shouldLoadGallery || isLoading
               ? 'Đang tải thư viện đá'
-              : '500+ mẫu đá cho bạn lựa chọn'}
+              : '500+ Mẫu đá cho bạn lựa chọn'}
           </h2>
           <p>
             Các mẫu đá được cập nhật trực tiếp từ showroom, mang đến trải nghiệm chân thực về chất liệu, vân đá và ứng dụng thực tế trong từng khung hình liền mạch.

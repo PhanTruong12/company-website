@@ -34,6 +34,38 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global heading safety: prevent overflow on narrow screens */
+:where(h1, h2, h3) {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-wrap: balance;
+}
+
+@media (max-width: 767px) {
+  :where(h1, h2, h3, [class*='title'], [class*='heading'], [class*='hero']) {
+    max-inline-size: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 6.8vw, 2rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: clamp(1.25rem, 5.8vw, 1.6rem);
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: clamp(1.05rem, 4.8vw, 1.3rem);
+    line-height: 1.3;
+  }
+}
+
 a {
   font-weight: 500;
   color: #646cff;
