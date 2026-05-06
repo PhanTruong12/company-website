@@ -1,5 +1,6 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -556,6 +557,15 @@ const Showroom = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage, sortedImages]);
 
+  useEffect(() => {
+    if (!selectedImage) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedImage]);
+
   const goModalPrev = () => {
     if (!selectedImage) return;
     const idx = sortedImages.findIndex((i) => i._id === selectedImage._id);
@@ -613,6 +623,90 @@ const Showroom = () => {
       : -1;
   const shouldShowMobileFab =
     isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
+
+  const imageModal = selectedImage ? (
+    <div
+      className="image-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Xem ảnh ${selectedImage.name}`}
+      onClick={closeImageModal}
+    >
+      <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+        {sortedImages.length > 1 && (
+          <>
+            <button
+              type="button"
+              className="image-modal-nav image-modal-nav--prev"
+              onClick={goModalPrev}
+              disabled={modalImageIndex <= 0}
+              aria-label="Ảnh trước"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className="image-modal-nav image-modal-nav--next"
+              onClick={goModalNext}
+              disabled={modalImageIndex < 0 || modalImageIndex >= sortedImages.length - 1}
+              aria-label="Ảnh sau"
+            >
+              ›
+            </button>
+          </>
+        )}
+        <button
+          ref={modalCloseRef}
+          type="button"
+          className="image-modal-close"
+          onClick={closeImageModal}
+          aria-label="Đóng"
+        >
+          ×
+        </button>
+        <img
+          src={getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })}
+          srcSet={[
+            `${getImageUrl(selectedImage.imageUrl, { width: 640, crop: 'limit' })} 640w`,
+            `${getImageUrl(selectedImage.imageUrl, { width: 960, crop: 'limit' })} 960w`,
+            `${getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
+          ].join(', ')}
+          sizes="(max-width: 768px) 100vw, 90vw"
+          alt={selectedImage.name}
+          className="image-modal-image"
+          loading="eager"
+          decoding="async"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
+          }}
+        />
+        <div className="image-modal-info">
+          <h3 className="image-modal-title">{selectedImage.name}</h3>
+          <div className="image-modal-meta">
+            {getImageStoneTypes(selectedImage).map((type) => (
+              <span key={`${selectedImage._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
+            ))}
+            {getImageSurfaces(selectedImage).map((surface) => (
+              <span key={`${selectedImage._id}-${surface}`} className="image-modal-tag">{surface}</span>
+            ))}
+            <span className="image-modal-tag">
+              {Array.isArray(selectedImage.wallPosition)
+                ? selectedImage.wallPosition.join(', ')
+                : selectedImage.wallPosition}
+            </span>
+          </div>
+          {selectedImage.description && (
+            <p className="image-modal-description">{selectedImage.description}</p>
+          )}
+          {sortedImages.length > 1 && (
+            <p className="image-modal-hint">
+              Mũi tên trái/phải để xem ảnh khác · Esc để đóng
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   const triggerMobileTapFeedback = () => {
     if (typeof window === 'undefined' || !window.matchMedia('(pointer: coarse)').matches) return;
@@ -1108,89 +1202,7 @@ const Showroom = () => {
             )}
           </section>
         </div>
-        {selectedImage && (
-          <div
-            className="image-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Xem ảnh ${selectedImage.name}`}
-            onClick={closeImageModal}
-          >
-            <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-              {sortedImages.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    className="image-modal-nav image-modal-nav--prev"
-                    onClick={goModalPrev}
-                    disabled={modalImageIndex <= 0}
-                    aria-label="Ảnh trước"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    type="button"
-                    className="image-modal-nav image-modal-nav--next"
-                    onClick={goModalNext}
-                    disabled={modalImageIndex < 0 || modalImageIndex >= sortedImages.length - 1}
-                    aria-label="Ảnh sau"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-              <button
-                ref={modalCloseRef}
-                type="button"
-                className="image-modal-close"
-                onClick={closeImageModal}
-                aria-label="Đóng"
-              >
-                ×
-              </button>
-              <img
-                src={getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })}
-                srcSet={[
-                  `${getImageUrl(selectedImage.imageUrl, { width: 640, crop: 'limit' })} 640w`,
-                  `${getImageUrl(selectedImage.imageUrl, { width: 960, crop: 'limit' })} 960w`,
-                  `${getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
-                ].join(', ')}
-                sizes="(max-width: 768px) 100vw, 90vw"
-                alt={selectedImage.name}
-                className="image-modal-image"
-                loading="eager"
-                decoding="async"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
-                }}
-              />
-              <div className="image-modal-info">
-                <h3 className="image-modal-title">{selectedImage.name}</h3>
-                <div className="image-modal-meta">
-                  {getImageStoneTypes(selectedImage).map((type) => (
-                    <span key={`${selectedImage._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
-                  ))}
-                  {getImageSurfaces(selectedImage).map((surface) => (
-                    <span key={`${selectedImage._id}-${surface}`} className="image-modal-tag">{surface}</span>
-                  ))}
-                  <span className="image-modal-tag">
-                    {Array.isArray(selectedImage.wallPosition)
-                      ? selectedImage.wallPosition.join(', ')
-                      : selectedImage.wallPosition}
-                  </span>
-                </div>
-                {selectedImage.description && (
-                  <p className="image-modal-description">{selectedImage.description}</p>
-                )}
-                {sortedImages.length > 1 && (
-                  <p className="image-modal-hint">
-                    Mũi tên trái/phải để xem ảnh khác · Esc để đóng
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {imageModal && (typeof document !== 'undefined' ? createPortal(imageModal, document.body) : imageModal)}
       </div>
     </div>
   );
