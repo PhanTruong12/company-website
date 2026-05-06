@@ -1,6 +1,8 @@
 // Showroom.tsx - Trang Showroom hiển thị gallery hình ảnh nội thất
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Keyboard, A11y } from 'swiper/modules';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -16,6 +18,8 @@ import { getImageUrl } from '../utils/imageUrl';
 import { publicAsset } from '../utils/publicAsset';
 import { subscribeImagesUpdated } from '../utils/imageSync';
 import './Showroom.css';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 /** Khớp bộ lọc showroom với logic filter API (stoneType + wallPosition OR) */
 const getImageSurfaces = (img: InteriorImage): string[] => {
@@ -86,11 +90,6 @@ const Showroom = () => {
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isMobileToolbarHidden, setIsMobileToolbarHidden] = useState(false);
   const [isNearPageBottom, setIsNearPageBottom] = useState(false);
-  const [canUseNativeDialog, setCanUseNativeDialog] = useState(() =>
-    typeof window !== 'undefined' &&
-    typeof HTMLDialogElement !== 'undefined' &&
-    typeof HTMLDialogElement.prototype.showModal === 'function'
-  );
 
   // Refs giúp xử lý realtime mà không phụ thuộc vào closure/state stale.
   const listMetaRef = useRef<ShowroomListMeta | null>(null);
@@ -530,7 +529,6 @@ const Showroom = () => {
     setSelectedImage(null);
   };
 
-  const modalDialogRef = useRef<HTMLDialogElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -539,44 +537,17 @@ const Showroom = () => {
   }, [selectedImage]);
 
   useEffect(() => {
-    if (!selectedImage || !canUseNativeDialog) return;
-    const dialog = modalDialogRef.current;
-    if (!dialog) return;
-    try {
-      if (!dialog.open) dialog.showModal();
-    } catch {
-      setCanUseNativeDialog(false);
-      return;
-    }
-    return () => {
-      if (dialog.open) dialog.close();
-    };
-  }, [selectedImage, canUseNativeDialog]);
-
-  useEffect(() => {
     if (!selectedImage) return;
-
-    const idx = sortedImages.findIndex((i) => i._id === selectedImage._id);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setSelectedImage(null);
-        return;
-      }
-      if (event.key === 'ArrowLeft' && idx > 0) {
-        event.preventDefault();
-        setSelectedImage(sortedImages[idx - 1]);
-        return;
-      }
-      if (event.key === 'ArrowRight' && idx >= 0 && idx < sortedImages.length - 1) {
-        event.preventDefault();
-        setSelectedImage(sortedImages[idx + 1]);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedImage, sortedImages]);
+  }, [selectedImage]);
 
   useEffect(() => {
     if (!selectedImage) return;
@@ -586,20 +557,6 @@ const Showroom = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [selectedImage]);
-
-  const goModalPrev = () => {
-    if (!selectedImage) return;
-    const idx = sortedImages.findIndex((i) => i._id === selectedImage._id);
-    if (idx > 0) setSelectedImage(sortedImages[idx - 1]);
-  };
-
-  const goModalNext = () => {
-    if (!selectedImage) return;
-    const idx = sortedImages.findIndex((i) => i._id === selectedImage._id);
-    if (idx >= 0 && idx < sortedImages.length - 1) {
-      setSelectedImage(sortedImages[idx + 1]);
-    }
-  };
 
   const removeStoneTypeFilter = () => {
     setSelectedStoneType('');
@@ -645,30 +602,16 @@ const Showroom = () => {
   const shouldShowMobileFab =
     isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
 
-  const imageModalContent = selectedImage ? (
-    <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-      {sortedImages.length > 1 && (
-        <>
-          <button
-            type="button"
-            className="image-modal-nav image-modal-nav--prev"
-            onClick={goModalPrev}
-            disabled={modalImageIndex <= 0}
-            aria-label="Ảnh trước"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            className="image-modal-nav image-modal-nav--next"
-            onClick={goModalNext}
-            disabled={modalImageIndex < 0 || modalImageIndex >= sortedImages.length - 1}
-            aria-label="Ảnh sau"
-          >
-            ›
-          </button>
-        </>
-      )}
+  const imageModal = selectedImage ? (
+    <div
+      className="image-modal image-modal--swiper"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Xem ảnh ${selectedImage.name}`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) closeImageModal();
+      }}
+    >
       <button
         ref={modalCloseRef}
         type="button"
@@ -678,80 +621,67 @@ const Showroom = () => {
       >
         ×
       </button>
-      <img
-        src={getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })}
-        srcSet={[
-          `${getImageUrl(selectedImage.imageUrl, { width: 640, crop: 'limit' })} 640w`,
-          `${getImageUrl(selectedImage.imageUrl, { width: 960, crop: 'limit' })} 960w`,
-          `${getImageUrl(selectedImage.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
-        ].join(', ')}
-        sizes="(max-width: 768px) 100vw, 90vw"
-        alt={selectedImage.name}
-        className="image-modal-image"
-        loading="eager"
-        decoding="async"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
-        }}
-      />
-      <div className="image-modal-info">
-        <h3 className="image-modal-title">{selectedImage.name}</h3>
-        <div className="image-modal-meta">
-          {getImageStoneTypes(selectedImage).map((type) => (
-            <span key={`${selectedImage._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
+      <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+        <Swiper
+          modules={[Navigation, Keyboard, A11y]}
+          navigation={sortedImages.length > 1}
+          keyboard={{ enabled: true }}
+          initialSlide={modalImageIndex >= 0 ? modalImageIndex : 0}
+          className="image-modal-swiper"
+          onSlideChange={(swiper) => {
+            const nextImage = sortedImages[swiper.activeIndex];
+            if (nextImage && nextImage._id !== selectedImage._id) {
+              setSelectedImage(nextImage);
+            }
+          }}
+        >
+          {sortedImages.map((image) => (
+            <SwiperSlide key={`modal-slide-${image._id}`}>
+              <img
+                src={getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })}
+                srcSet={[
+                  `${getImageUrl(image.imageUrl, { width: 640, crop: 'limit' })} 640w`,
+                  `${getImageUrl(image.imageUrl, { width: 960, crop: 'limit' })} 960w`,
+                  `${getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
+                ].join(', ')}
+                sizes="100vw"
+                alt={image.name}
+                className="image-modal-image"
+                loading="eager"
+                decoding="async"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
+                }}
+              />
+              <div className="image-modal-info">
+                <h3 className="image-modal-title">{image.name}</h3>
+                <div className="image-modal-meta">
+                  {getImageStoneTypes(image).map((type) => (
+                    <span key={`${image._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
+                  ))}
+                  {getImageSurfaces(image).map((surface) => (
+                    <span key={`${image._id}-${surface}`} className="image-modal-tag">{surface}</span>
+                  ))}
+                  <span className="image-modal-tag">
+                    {Array.isArray(image.wallPosition)
+                      ? image.wallPosition.join(', ')
+                      : image.wallPosition}
+                  </span>
+                </div>
+                {image.description && (
+                  <p className="image-modal-description">{image.description}</p>
+                )}
+                {sortedImages.length > 1 && (
+                  <p className="image-modal-hint">
+                    Vuốt trái/phải để xem ảnh khác · Esc để đóng
+                  </p>
+                )}
+              </div>
+            </SwiperSlide>
           ))}
-          {getImageSurfaces(selectedImage).map((surface) => (
-            <span key={`${selectedImage._id}-${surface}`} className="image-modal-tag">{surface}</span>
-          ))}
-          <span className="image-modal-tag">
-            {Array.isArray(selectedImage.wallPosition)
-              ? selectedImage.wallPosition.join(', ')
-              : selectedImage.wallPosition}
-          </span>
-        </div>
-        {selectedImage.description && (
-          <p className="image-modal-description">{selectedImage.description}</p>
-        )}
-        {sortedImages.length > 1 && (
-          <p className="image-modal-hint">
-            Mũi tên trái/phải để xem ảnh khác · Esc để đóng
-          </p>
-        )}
+        </Swiper>
       </div>
     </div>
-  ) : null;
-
-  const imageModal = selectedImage ? (
-    canUseNativeDialog ? (
-      <dialog
-        ref={modalDialogRef}
-        className="image-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Xem ảnh ${selectedImage.name}`}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) closeImageModal();
-        }}
-        onCancel={(e) => {
-          e.preventDefault();
-          closeImageModal();
-        }}
-      >
-        {imageModalContent}
-      </dialog>
-    ) : (
-      <div
-        className="image-modal image-modal--fallback"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Xem ảnh ${selectedImage.name}`}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) closeImageModal();
-        }}
-      >
-        {imageModalContent}
-      </div>
-    )
   ) : null;
 
   const triggerMobileTapFeedback = () => {
