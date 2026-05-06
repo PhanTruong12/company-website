@@ -95,6 +95,9 @@ export const StoneCollectionSection = () => {
   if (stoneCollectionCategories.length === 0) return null;
 
   return (
+    // FIXED: removed overflow:hidden from CSS on this section.
+    // The section now uses isolation:isolate instead, which keeps the
+    // stacking context without clipping position:fixed children on iOS Safari.
     <section className="stone-collection-section">
       <div className="stone-collection-container">
         {isLoading ? (
@@ -111,6 +114,13 @@ export const StoneCollectionSection = () => {
                 className="stone-collection-carousel-stack-item"
                 style={{ '--collection-index': index } as CSSProperties}
               >
+                {/*
+                  IMPORTANT: Stone3DCarousel must render its fullscreen overlay
+                  via createPortal (see Stone3DCarousel.tsx fix below).
+                  This ensures the overlay mounts directly on document.body,
+                  escaping ALL overflow/clip/transform ancestors — the root
+                  cause of the iOS Safari clipping bug shown in the screenshot.
+                */}
                 <Stone3DCarousel
                   categoryName={category.name}
                   items={category.items}

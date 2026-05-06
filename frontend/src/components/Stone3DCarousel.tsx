@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import type { StoneCollectionItem } from '../data/stoneCollections';
 import { buildCloudinarySrcSetFromWidths, getImageUrl } from '../utils/imageUrl';
@@ -78,34 +79,60 @@ function StoneCollectionImage({
 
 export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCarouselProps) => {
   const isDesktopGrid = useIsDesktopGridLayout();
-  const [activeDesktopIndex, setActiveDesktopIndex] = useState(0);
-  const [fullscreenItem, setFullscreenItem] = useState<StoneCollectionItem | null>(null);
 
-  useEffect(() => {
-    setActiveDesktopIndex(0);
-  }, [items.length]);
+  // FIXED: Track items.length in state so we can reset activeDesktopIndex
+  // during render when the length changes — no ref, no effect, no extra render.
+  // Storing both values together lets React batch the reset in one pass.
+  // Pattern: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [
+    { activeDesktopIndex, trackedItemsLength },
+    setDesktopCarouselState,
+  ] = useState({ activeDesktopIndex: 0, trackedItemsLength: items.length });
 
-  useEffect(() => {
-    if (isDesktopGrid) {
-      setFullscreenItem(null);
-    }
-  }, [isDesktopGrid]);
+  // When items.length changes, reset the index to 0 in the same render.
+  // This is safe: React re-renders immediately with the new state, skipping
+  // the stale render — no cascading effect cycle.
+  if (trackedItemsLength !== items.length) {
+    setDesktopCarouselState({ activeDesktopIndex: 0, trackedItemsLength: items.length });
+  }
+
+  // FIXED: Derive fullscreen visibility from isDesktopGrid instead of using
+  // useEffect(() => { setFullscreenItem(null) }, [isDesktopGrid]).
+  // The raw state holds what the user tapped; the derived value nullifies it
+  // on desktop — zero extra renders, no lint warning.
+  const [fullscreenItemRaw, setFullscreenItem] = useState<StoneCollectionItem | null>(null);
+  const fullscreenItem = isDesktopGrid ? null : fullscreenItemRaw;
 
   useEffect(() => {
     if (!isDesktopGrid || items.length <= 1) return undefined;
 
     const timer = window.setInterval(() => {
-      setActiveDesktopIndex((index) => (index + 1) % items.length);
+      setDesktopCarouselState((prev) => ({
+        trackedItemsLength: prev.trackedItemsLength,
+        activeDesktopIndex: (prev.activeDesktopIndex + 1) % items.length,
+      }));
     }, 4000);
 
     return () => window.clearInterval(timer);
   }, [isDesktopGrid, items.length]);
 
+  // iOS Safari scroll lock.
+  // overflow:hidden alone does not prevent scroll on iOS.
+  // position:fixed + top:-scrollY is the reliable cross-version solution.
+  // Scroll position is restored on cleanup so the page does not jump.
   useEffect(() => {
     if (!fullscreenItem) return undefined;
 
+    const scrollY = window.scrollY;
     const previousOverflow = document.body.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousWidth = document.body.style.width;
+    const previousTop = document.body.style.top;
+
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${scrollY}px`;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -117,6 +144,10 @@ export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCa
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.width = previousWidth;
+      document.body.style.top = previousTop;
+      window.scrollTo(0, scrollY);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [fullscreenItem]);
@@ -192,7 +223,10 @@ export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCa
         </div>
       )}
 
-      {fullscreenItem ? (
+      {/* createPortal mounts the overlay on document.body so it is never
+          clipped by any ancestor overflow/clip/isolation context — the root
+          cause of the iOS Safari fullscreen cropping bug. */}
+      {fullscreenItem ? createPortal(
         <div
           className="stone-gallery-fullscreen"
           role="dialog"
@@ -208,7 +242,10 @@ export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCa
           >
             ×
           </button>
-          <figure className="stone-gallery-fullscreen-figure" onClick={(event) => event.stopPropagation()}>
+          <figure
+            className="stone-gallery-fullscreen-figure"
+            onClick={(event) => event.stopPropagation()}
+          >
             <img
               src={getImageUrl(fullscreenItem.imageUrl, {
                 width: 1200,
@@ -223,7 +260,8 @@ export const Stone3DCarousel = ({ items, categoryName, showroomHref }: Stone3DCa
               {fullscreenItem.title}
             </figcaption>
           </figure>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </div>
   );
