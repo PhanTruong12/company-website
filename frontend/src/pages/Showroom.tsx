@@ -525,11 +525,22 @@ const Showroom = () => {
     setSelectedImage(null);
   };
 
+  const modalDialogRef = useRef<HTMLDialogElement>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!selectedImage) return;
     modalCloseRef.current?.focus();
+  }, [selectedImage]);
+
+  useEffect(() => {
+    if (!selectedImage) return;
+    const dialog = modalDialogRef.current;
+    if (!dialog) return;
+    if (!dialog.open) dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+    };
   }, [selectedImage]);
 
   useEffect(() => {
@@ -625,12 +636,19 @@ const Showroom = () => {
     isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
 
   const imageModal = selectedImage ? (
-    <div
+    <dialog
+      ref={modalDialogRef}
       className="image-modal"
       role="dialog"
       aria-modal="true"
       aria-label={`Xem ảnh ${selectedImage.name}`}
-      onClick={closeImageModal}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) closeImageModal();
+      }}
+      onCancel={(e) => {
+        e.preventDefault();
+        closeImageModal();
+      }}
     >
       <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
         {sortedImages.length > 1 && (
@@ -705,7 +723,7 @@ const Showroom = () => {
           )}
         </div>
       </div>
-    </div>
+    </dialog>
   ) : null;
 
   const triggerMobileTapFeedback = () => {
