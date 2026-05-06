@@ -701,7 +701,13 @@
 }
 
 /* Modal */
-.image-modal {
+image-modal {
+  position: fixed !important; /* Bắt buộc để đè lên toàn màn hình thay vì absolute mặc định của dialog */
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border: none;
   margin: 0;
   padding: 0;
@@ -711,11 +717,29 @@
   max-height: 100dvh;
   background: transparent;
   overflow: hidden;
-  z-index: 5000;
+  z-index: 999999 !important; /* Tăng z-index cực lớn để đè lên Header và Carousel */
+  
+  /* Bắt buộc trình duyệt (Safari iOS) gộp modal vào một layer phần cứng cao nhất, chống lỗi xuyên ảnh */
+  -webkit-transform: translateZ(0); 
+  transform: translateZ(0);
 }
 
 .image-modal::backdrop {
   background: rgba(0, 0, 0, 0.82);
+}
+
+.image-modal--fallback {
+  position: fixed !important;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  background: rgba(0, 0, 0, 0.82);
+  z-index: 999999 !important; 
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .image-modal-content {
