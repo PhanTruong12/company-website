@@ -19,7 +19,7 @@ export const Footer = () => {
               <h3 className="footer-company-name">TND Granite</h3>
             </div>
             <p className="footer-company-full">
-              Công Ty TNHH TM&TK TND Granite
+              Công Ty TNHH TM&TK Tường Nhà Đẹp
             </p>
             <p className="footer-services">
               Cung Cấp - Thi Công - Lắp Đặt

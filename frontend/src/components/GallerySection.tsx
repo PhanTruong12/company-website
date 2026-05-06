@@ -81,23 +81,35 @@ const GallerySection = () => {
                 ? Array.from({ length: 6 }).map((_, index) => (
                     <div className="gallery-card gallery-card--loading" key={index} />
                   ))
-                : marqueeItems.map((item, index) => (
-                    <div
-                      className="gallery-card"
-                      key={`${item._id}-${index}`}
-                      aria-hidden={index >= galleryItems.length}
-                    >
-                      <img
-                        src={getImageUrl(item.imageUrl, { width: 480, crop: 'fill' })}
-                        srcSet={buildGallerySrcSet(item.imageUrl)}
-                        sizes="(max-width: 640px) 76vw, (max-width: 1024px) 320px, 380px"
-                        alt={item.name}
-                        loading={index < 8 ? 'eager' : 'lazy'}
-                        fetchPriority={index < 8 ? 'high' : 'low'}
-                        decoding="async"
-                      />
-                    </div>
-                  ))}
+                : marqueeItems.map((item, index) => {
+                    const isDuplicate = index >= galleryItems.length;
+
+                    return isDuplicate ? (
+                      <div className="gallery-card" key={`${item._id}-${index}`} aria-hidden="true">
+                        <img
+                          src={getImageUrl(item.imageUrl, { width: 480, crop: 'fill' })}
+                          srcSet={buildGallerySrcSet(item.imageUrl)}
+                          sizes="(max-width: 640px) 76vw, (max-width: 1024px) 320px, 380px"
+                          alt={item.name}
+                          loading={index < 8 ? 'eager' : 'lazy'}
+                          fetchPriority={index < 8 ? 'high' : 'low'}
+                          decoding="async"
+                        />
+                      </div>
+                    ) : (
+                      <div className="gallery-card" key={`${item._id}-${index}`}>
+                        <img
+                          src={getImageUrl(item.imageUrl, { width: 480, crop: 'fill' })}
+                          srcSet={buildGallerySrcSet(item.imageUrl)}
+                          sizes="(max-width: 640px) 76vw, (max-width: 1024px) 320px, 380px"
+                          alt={item.name}
+                          loading={index < 8 ? 'eager' : 'lazy'}
+                          fetchPriority={index < 8 ? 'high' : 'low'}
+                          decoding="async"
+                        />
+                      </div>
+                    );
+                  })}
             </div>
           </div>
         </div>

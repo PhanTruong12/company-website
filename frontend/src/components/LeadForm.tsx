@@ -54,7 +54,7 @@ const LeadForm = ({ className }: LeadFormProps) => {
             className="form-input"
             required
             placeholder="Nhập họ và tên của bạn"
-            aria-invalid={!!fieldErrors.name}
+            {...(fieldErrors.name ? { 'aria-invalid': 'true' } : {})}
           />
           {fieldErrors.name && <div className="form-field-error">{fieldErrors.name}</div>}
         </div>
@@ -72,7 +72,7 @@ const LeadForm = ({ className }: LeadFormProps) => {
             className="form-input"
             required
             placeholder="093 578 93 63"
-            aria-invalid={!!fieldErrors.phone}
+            {...(fieldErrors.phone ? { 'aria-invalid': 'true' } : {})}
           />
           {fieldErrors.phone && <div className="form-field-error">{fieldErrors.phone}</div>}
         </div>
@@ -90,7 +90,7 @@ const LeadForm = ({ className }: LeadFormProps) => {
           onChange={onChange}
           className="form-input"
           placeholder="your.email@example.com"
-          aria-invalid={!!fieldErrors.email}
+          {...(fieldErrors.email ? { 'aria-invalid': 'true' } : {})}
         />
         {fieldErrors.email && <div className="form-field-error">{fieldErrors.email}</div>}
       </div>
