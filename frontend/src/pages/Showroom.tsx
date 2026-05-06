@@ -25,8 +25,7 @@ import 'swiper/css/navigation';
 const getImageSurfaces = (img: InteriorImage): string[] => {
   const source = img.be_mat ?? img.hang_muc;
   const raw = Array.isArray(source) ? source : typeof source === 'string' ? source.split(',') : [];
-  const normalizeSurface = (value: string) =>
-    value.trim().replace(/\s+/g, ' ');
+  const normalizeSurface = (value: string) => value.trim().replace(/\s+/g, ' ');
   return raw.map((item) => normalizeSurface(String(item))).filter(Boolean);
 };
 
@@ -37,7 +36,8 @@ const getImageStoneTypes = (img: InteriorImage): string[] => {
 };
 
 /**
- * Chuẩn hóa tên loại đá để khớp URL ↔ dropdown (không dùng includes — tránh map nhầm sang loại khác).
+ * Chuẩn hóa tên loại đá để khớp URL ↔ dropdown
+ * Không dùng includes() — tránh map nhầm sang loại khác.
  */
 const normalizeStoneLabelForMatch = (value: string) =>
   value
@@ -96,9 +96,11 @@ const Showroom = () => {
   const imagesRef = useRef<InteriorImage[]>([]);
   const hasInitializedFromUrlRef = useRef(false);
   const lastScrollYRef = useRef(0);
-  /** Tăng mỗi lần gọi API danh sách — bỏ qua phản hồi cũ khi đổi lọc nhanh. */
   const galleryFetchGenerationRef = useRef(0);
-  
+
+  // Ref lưu scrollY để restore sau khi đóng modal (iOS Safari)
+  const modalScrollYRef = useRef(0);
+
   // Lấy danh sách loại đá từ API (đã cache bằng React Query)
   const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useStoneTypes();
   const { data: beMatData = [], isLoading: isLoadingBeMat } = useQuery({
@@ -106,16 +108,16 @@ const Showroom = () => {
     queryFn: getInteriorImageSurfaces,
     staleTime: 30 * 1000,
   });
-  // Sử dụng trực tiếp data từ API (đã có name và slug từ backend)
+
   const stoneTypes = stoneTypesData;
   const wallPositions = WALL_POSITIONS;
 
-  // Đọc filter từ URL params - khởi tạo với giá trị từ URL
+  // Filter state
   const [selectedStoneType, setSelectedStoneType] = useState<string>('');
   const [selectedBeMat, setSelectedBeMat] = useState<string>('');
   const [selectedWallPosition, setSelectedWallPosition] = useState<string[]>([]);
-  
-  // State cho sắp xếp: 'az' (A-Z), 'za' (Z-A), 'default' (mặc định)
+
+  // Sắp xếp: 'az' | 'za' | 'default'
   const [sortOrder, setSortOrder] = useState<'az' | 'za' | 'default'>('az');
 
   const isSameStringArray = (a: string[], b: string[]): boolean => {
@@ -147,9 +149,7 @@ const Showroom = () => {
           page,
           limit
         );
-        if (requestGeneration !== galleryFetchGenerationRef.current) {
-          return;
-        }
+        if (requestGeneration !== galleryFetchGenerationRef.current) return;
         if (append) {
           const incomingIds = new Set(data.map((i) => i._id));
           setJustAppendedIds(incomingIds);
@@ -165,9 +165,7 @@ const Showroom = () => {
           limit: Number(pagination.limit ?? limit),
         });
       } catch (err) {
-        if (requestGeneration !== galleryFetchGenerationRef.current) {
-          return;
-        }
+        if (requestGeneration !== galleryFetchGenerationRef.current) return;
         setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
       } finally {
         if (requestGeneration === galleryFetchGenerationRef.current) {
@@ -197,12 +195,8 @@ const Showroom = () => {
 
   const loadMore = useCallback(() => {
     if (!listMeta || loadingMore) return;
-
-    // Ưu tiên total đã biết để quyết định còn dữ liệu, tránh phụ thuộc hoàn toàn vào totalPages
-    // vì một số backend/filter có thể trả pagination chưa nhất quán.
     const loadedCount = images.length;
     if (listMeta.total > 0 && loadedCount >= listMeta.total) return;
-
     const nextPage = listMeta.page + 1;
     fetchImagesPage(
       selectedStoneType || undefined,
@@ -223,14 +217,12 @@ const Showroom = () => {
     selectedPageSize,
   ]);
 
-  // Đọc filter từ URL khi component mount hoặc URL thay đổi
-  // Đợi stoneTypes load xong rồi mới match và set state
+  // Đọc filter từ URL khi mount hoặc URL thay đổi
   useEffect(() => {
     const stoneTypeFromUrl = searchParams.get('stoneType') || '';
     const beMatFromUrl = searchParams.get('be_mat') || searchParams.get('hang_muc') || '';
     const decodeQueryValue = (value: string) =>
       decodeURIComponent(value.replace(/\+/g, ' '));
-
     const rawWallPosition = searchParams.get('wallPosition') || '';
     const wallPositionFromUrl = rawWallPosition
       ? decodeQueryValue(rawWallPosition)
@@ -238,14 +230,10 @@ const Showroom = () => {
           .map((value) => value.trim())
           .filter(Boolean)
       : [];
-    
-    // Decode URL parameter (trong trường hợp có ký tự đặc biệt)
+
     const decodedStoneType = stoneTypeFromUrl ? decodeURIComponent(stoneTypeFromUrl) : '';
-    
     let finalStoneType = '';
-    
-    // Khớp loại đá từ URL với danh sách API — chỉ khớp đúng (sau chuẩn hóa), không dùng includes()
-    // (includes hai chiều dễ map nhầm sang tên dài hơn / loại khác → API nhận sai stoneType).
+
     if (decodedStoneType) {
       if (stoneTypes.length > 0) {
         const keyFromUrl = normalizeStoneLabelForMatch(decodedStoneType);
@@ -254,11 +242,10 @@ const Showroom = () => {
         );
         finalStoneType = exactMatch ? exactMatch.name : decodedStoneType;
       } else {
-        // Nếu stoneTypes chưa load xong, dùng giá trị từ URL tạm thời
         finalStoneType = decodedStoneType;
       }
     }
-    
+
     const sameStoneType = finalStoneType === selectedStoneType;
     const sameBeMat = beMatFromUrl === selectedBeMat;
     const sameWallPosition = isSameStringArray(wallPositionFromUrl, selectedWallPosition);
@@ -268,64 +255,39 @@ const Showroom = () => {
     if (shouldSkipReload) return;
 
     hasInitializedFromUrlRef.current = true;
-
-    // Set state và load images khi URL/filter thực sự thay đổi
     setSelectedStoneType(finalStoneType);
     setSelectedBeMat(beMatFromUrl);
     setSelectedWallPosition(wallPositionFromUrl);
-
-    // Load trang đầu (12 ảnh) với giá trị đã được xử lý
     loadFirstPage(finalStoneType, beMatFromUrl, wallPositionFromUrl);
   }, [searchParams, stoneTypes, loadFirstPage, selectedStoneType, selectedBeMat, selectedWallPosition]);
 
   useEffect(() => {
     if (!hasInitializedFromUrlRef.current) return;
     loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
-    // Chỉ kích hoạt khi đổi page size sau khi đã init; filter/URL xử lý ở effect khác.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPageSize]);
 
-  // Sync refs theo state hiện tại
-  useEffect(() => {
-    listMetaRef.current = listMeta;
-  }, [listMeta]);
-
-  useEffect(() => {
-    imagesRef.current = images;
-  }, [images]);
-
-  // Load lại images khi user thay đổi filter từ dropdown (không phải từ URL)
-  // useEffect này chỉ chạy khi selectedStoneType hoặc selectedWallPosition thay đổi từ user interaction
-  // Không chạy khi đã được set từ URL (vì đã load trong useEffect trên)
+  // Sync refs
+  useEffect(() => { listMetaRef.current = listMeta; }, [listMeta]);
+  useEffect(() => { imagesRef.current = images; }, [images]);
 
   const handleStoneTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedStoneType(value);
-
-    // Cập nhật URL params
     const newParams = new URLSearchParams(searchParams);
-    if (value) {
-      newParams.set('stoneType', value);
-    } else {
-      newParams.delete('stoneType');
-    }
+    if (value) { newParams.set('stoneType', value); } else { newParams.delete('stoneType'); }
     setSearchParams(newParams, { replace: true });
   };
 
   const syncWallPositions = (next: string[]) => {
     const newParams = new URLSearchParams(searchParams);
-    if (next.length > 0) {
-      newParams.set('wallPosition', next.join(','));
-    } else {
-      newParams.delete('wallPosition');
-    }
+    if (next.length > 0) { newParams.set('wallPosition', next.join(',')); } else { newParams.delete('wallPosition'); }
     setSearchParams(newParams, { replace: true });
   };
 
   const handleBeMatChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedBeMat(value);
-
     const newParams = new URLSearchParams(searchParams);
     if (value) {
       newParams.set('be_mat', value);
@@ -346,7 +308,7 @@ const Showroom = () => {
     });
   };
 
-  // Lắng nghe CRUD ảnh realtime (socket + tab): merge payload, không refetch khi có đủ dữ liệu
+  // Realtime CRUD sync
   useEffect(() => {
     const unsubscribe = subscribeImagesUpdated((payload: ImagesUpdatedPayload) => {
       if (payload.action === 'sync') {
@@ -355,14 +317,11 @@ const Showroom = () => {
         const loadedCount = imagesRef.current.length;
         const currentLimit = currentMeta?.limit ?? selectedPageSize;
 
-        // Nếu user chưa load qua trang 1 (hoặc danh sách còn ít), reset về trang đầu như trước.
         if (!currentMeta || currentPage <= 1 || loadedCount <= currentLimit) {
           loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
           return;
         }
 
-        // Nếu user đã load trang > 1, đừng reset toàn bộ (có thể khiến nút "Xem thêm"
-        // trông như chỉ hoạt động 1 lần). Chỉ refresh page 1 và giữ nguyên "page" hiện tại.
         (async () => {
           try {
             const { images: firstPageImages, pagination } = await getInteriorImages(
@@ -372,13 +331,11 @@ const Showroom = () => {
               1,
               currentLimit
             );
-
             setImages((prev) => {
               const byId = new Map(prev.map((i) => [i._id, i]));
               for (const img of firstPageImages) byId.set(img._id, img);
               return Array.from(byId.values());
             });
-
             setListMeta((prev) =>
               prev
                 ? {
@@ -386,7 +343,6 @@ const Showroom = () => {
                     total: Number(pagination.total ?? prev.total),
                     totalPages: Number(pagination.totalPages ?? prev.totalPages),
                     limit: Number(pagination.limit ?? prev.limit),
-                    // Giữ nguyên trang mà user đang xem
                     page: currentPage,
                   }
                 : {
@@ -397,11 +353,9 @@ const Showroom = () => {
                   }
             );
           } catch {
-            // Fallback: hard reset nếu refresh thất bại
             loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition);
           }
         })();
-
         return;
       }
 
@@ -418,16 +372,12 @@ const Showroom = () => {
 
       const img = payload.image;
       if (payload.action === 'created') {
-        if (!matchesShowroomFilters(img, selectedStoneType, selectedBeMat, selectedWallPosition)) {
-          return;
-        }
+        if (!matchesShowroomFilters(img, selectedStoneType, selectedBeMat, selectedWallPosition)) return;
         setImages((prev) => {
           if (prev.some((i) => i._id === img._id)) return prev;
           return [img, ...prev];
         });
-        setListMeta((prev) =>
-          prev ? { ...prev, total: prev.total + 1 } : prev
-        );
+        setListMeta((prev) => prev ? { ...prev, total: prev.total + 1 } : prev);
         queryClient.invalidateQueries({ queryKey: ['showroom-image-surfaces'] });
         return;
       }
@@ -435,20 +385,13 @@ const Showroom = () => {
       if (payload.action === 'updated') {
         queryClient.invalidateQueries({ queryKey: ['showroom-image-surfaces'] });
         setImages((prev) => {
-          const matches = matchesShowroomFilters(
-            img,
-            selectedStoneType,
-            selectedBeMat,
-            selectedWallPosition
-          );
+          const matches = matchesShowroomFilters(img, selectedStoneType, selectedBeMat, selectedWallPosition);
           const idx = prev.findIndex((i) => i._id === img._id);
           if (idx === -1) {
             if (!matches) return prev;
             return [img, ...prev];
           }
-          if (!matches) {
-            return prev.filter((i) => i._id !== img._id);
-          }
+          if (!matches) return prev.filter((i) => i._id !== img._id);
           const next = [...prev];
           next[idx] = img;
           return next;
@@ -456,16 +399,9 @@ const Showroom = () => {
       }
     });
     return unsubscribe;
-  }, [
-    loadFirstPage,
-    queryClient,
-    selectedStoneType,
-    selectedBeMat,
-    selectedWallPosition,
-    selectedPageSize,
-  ]);
+  }, [loadFirstPage, queryClient, selectedStoneType, selectedBeMat, selectedWallPosition, selectedPageSize]);
 
-  // Giữ modal chi tiết khớp bản ghi trong danh sách sau khi merge realtime
+  // Sync modal image với realtime updates
   useEffect(() => {
     if (!selectedImage?._id) return;
     const updated = images.find((i) => i._id === selectedImage._id);
@@ -477,57 +413,36 @@ const Showroom = () => {
     setSelectedStoneType('');
     setSelectedBeMat('');
     setSelectedWallPosition([]);
-
-    // Xóa tất cả params khỏi URL
     setSearchParams({}, { replace: true });
   };
 
-  // Hàm sắp xếp ảnh theo bảng chữ cái
   const sortImages = (imagesToSort: InteriorImage[]): InteriorImage[] => {
-    if (sortOrder === 'default') {
-      return imagesToSort;
-    }
-
-    const sorted = [...imagesToSort].sort((a, b) => {
-      // Sử dụng localeCompare với locale 'vi' để sắp xếp đúng tiếng Việt
-      const comparison = a.name.localeCompare(b.name, 'vi', {
-        sensitivity: 'base',
-        numeric: true,
-      });
-      
+    if (sortOrder === 'default') return imagesToSort;
+    return [...imagesToSort].sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true });
       return sortOrder === 'az' ? comparison : -comparison;
     });
-
-    return sorted;
   };
 
-  // Lấy danh sách ảnh đã được sắp xếp
   const sortedImages = sortImages(images);
 
-  // Sắp xếp stoneTypes và wallPositions theo bảng chữ cái cho filter dropdowns
-  const sortedStoneTypes = [...stoneTypes].sort((a, b) => 
+  const sortedStoneTypes = [...stoneTypes].sort((a, b) =>
     a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true })
   );
-  
-  const sortedWallPositions = [...wallPositions].sort((a, b) => 
+  const sortedWallPositions = [...wallPositions].sort((a, b) =>
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
   const sortedBeMat = [...beMatData].sort((a, b) =>
     a.localeCompare(b, 'vi', { sensitivity: 'base', numeric: true })
   );
+
   const wallPositionGroups = useMemo(() => {
-    const opGroup = sortedWallPositions.filter((position) =>
-      position.toLocaleLowerCase('vi').startsWith('ốp')
-    );
-    const otherGroup = sortedWallPositions.filter(
-      (position) => !position.toLocaleLowerCase('vi').startsWith('ốp')
-    );
+    const opGroup = sortedWallPositions.filter((p) => p.toLocaleLowerCase('vi').startsWith('ốp'));
+    const otherGroup = sortedWallPositions.filter((p) => !p.toLocaleLowerCase('vi').startsWith('ốp'));
     return { opGroup, otherGroup };
   }, [sortedWallPositions]);
 
-  const closeImageModal = () => {
-    setSelectedImage(null);
-  };
+  const closeImageModal = () => setSelectedImage(null);
 
   const modalCloseRef = useRef<HTMLButtonElement>(null);
 
@@ -536,25 +451,35 @@ const Showroom = () => {
     modalCloseRef.current?.focus();
   }, [selectedImage]);
 
+  // Escape key để đóng modal
   useEffect(() => {
     if (!selectedImage) return;
-
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedImage(null);
-      }
+      if (event.key === 'Escape') setSelectedImage(null);
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage]);
 
+  /**
+   * iOS Safari FIX: overflow:hidden trên body không lock scroll.
+   * Giải pháp: dùng position:fixed + body.style.top = -scrollY
+   * Sau khi đóng modal, restore scrollY chính xác.
+   */
   useEffect(() => {
     if (!selectedImage) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+
+    // Lưu vị trí scroll trước khi lock
+    modalScrollYRef.current = window.scrollY;
+
+    document.body.classList.add('modal-open');
+    document.body.style.top = `-${modalScrollYRef.current}px`;
+
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.classList.remove('modal-open');
+      document.body.style.top = '';
+      // Restore scroll position — instant để không thấy nhảy
+      window.scrollTo({ top: modalScrollYRef.current, behavior: 'instant' as ScrollBehavior });
     };
   }, [selectedImage]);
 
@@ -586,9 +511,7 @@ const Showroom = () => {
     selectedWallPosition.length;
 
   const hasMore =
-    listMeta !== null &&
-    listMeta.total > 0 &&
-    images.length < listMeta.total;
+    listMeta !== null && listMeta.total > 0 && images.length < listMeta.total;
 
   const buildGallerySrcSet = (imageUrl: string | undefined | null): string =>
     [280, 360, 480, 640, 768, 960]
@@ -596,98 +519,13 @@ const Showroom = () => {
       .join(', ');
 
   const modalImageIndex =
-    selectedImage != null
-      ? sortedImages.findIndex((i) => i._id === selectedImage._id)
-      : -1;
-  const shouldShowMobileFab =
-    isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
+    selectedImage != null ? sortedImages.findIndex((i) => i._id === selectedImage._id) : -1;
 
-  const imageModal = selectedImage ? (
-    <div
-      className="image-modal image-modal--swiper"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Xem ảnh ${selectedImage.name}`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) closeImageModal();
-      }}
-    >
-      <button
-        ref={modalCloseRef}
-        type="button"
-        className="image-modal-close"
-        onClick={closeImageModal}
-        aria-label="Đóng"
-      >
-        ×
-      </button>
-      <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-        <Swiper
-          modules={[Navigation, Keyboard, A11y]}
-          navigation={sortedImages.length > 1}
-          keyboard={{ enabled: true }}
-          initialSlide={modalImageIndex >= 0 ? modalImageIndex : 0}
-          className="image-modal-swiper"
-          onSlideChange={(swiper) => {
-            const nextImage = sortedImages[swiper.activeIndex];
-            if (nextImage && nextImage._id !== selectedImage._id) {
-              setSelectedImage(nextImage);
-            }
-          }}
-        >
-          {sortedImages.map((image) => (
-            <SwiperSlide key={`modal-slide-${image._id}`}>
-              <img
-                src={getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })}
-                srcSet={[
-                  `${getImageUrl(image.imageUrl, { width: 640, crop: 'limit' })} 640w`,
-                  `${getImageUrl(image.imageUrl, { width: 960, crop: 'limit' })} 960w`,
-                  `${getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
-                ].join(', ')}
-                sizes="100vw"
-                alt={image.name}
-                className="image-modal-image"
-                loading="eager"
-                decoding="async"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
-                }}
-              />
-              <div className="image-modal-info">
-                <h3 className="image-modal-title">{image.name}</h3>
-                <div className="image-modal-meta">
-                  {getImageStoneTypes(image).map((type) => (
-                    <span key={`${image._id}-modal-stone-${type}`} className="image-modal-tag">{type}</span>
-                  ))}
-                  {getImageSurfaces(image).map((surface) => (
-                    <span key={`${image._id}-${surface}`} className="image-modal-tag">{surface}</span>
-                  ))}
-                  <span className="image-modal-tag">
-                    {Array.isArray(image.wallPosition)
-                      ? image.wallPosition.join(', ')
-                      : image.wallPosition}
-                  </span>
-                </div>
-                {image.description && (
-                  <p className="image-modal-description">{image.description}</p>
-                )}
-                {sortedImages.length > 1 && (
-                  <p className="image-modal-hint">
-                    Vuốt trái/phải để xem ảnh khác · Esc để đóng
-                  </p>
-                )}
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    </div>
-  ) : null;
+  const shouldShowMobileFab = isMobileToolbarHidden && !isMobileFiltersOpen && !isNearPageBottom;
 
   const triggerMobileTapFeedback = () => {
     if (typeof window === 'undefined' || !window.matchMedia('(pointer: coarse)').matches) return;
     if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
-    // Haptic nhẹ để tránh rung mạnh gây khó chịu.
     navigator.vibrate(10);
   };
 
@@ -700,15 +538,11 @@ const Showroom = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isMobileFiltersOpen]);
 
-  /** Tránh cuộn nền khi panel lọc (mobile) mở — giảm scroll chaining / tap trượt. */
   useEffect(() => {
     if (!isMobileFiltersOpen) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => { document.body.style.overflow = previousOverflow; };
   }, [isMobileFiltersOpen]);
 
   useEffect(() => {
@@ -717,9 +551,7 @@ const Showroom = () => {
       if (!matches) setIsMobileToolbarHidden(false);
     };
     updateToolbarForViewport(media.matches);
-    const onMediaChange = (event: MediaQueryListEvent) => {
-      updateToolbarForViewport(event.matches);
-    };
+    const onMediaChange = (event: MediaQueryListEvent) => updateToolbarForViewport(event.matches);
     media.addEventListener('change', onMediaChange);
     return () => media.removeEventListener('change', onMediaChange);
   }, []);
@@ -752,20 +584,111 @@ const Showroom = () => {
 
     lastScrollYRef.current = Math.max(window.scrollY, 0);
     const initialViewportBottom = window.scrollY + window.innerHeight;
-    const initialNearBottom =
-      initialViewportBottom >= document.documentElement.scrollHeight - 180;
+    const initialNearBottom = initialViewportBottom >= document.documentElement.scrollHeight - 180;
     setIsNearPageBottom(initialNearBottom);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [isMobileFiltersOpen]);
 
+  // ─── Modal Swiper ─────────────────────────────────────────────────────────
+  const imageModal = selectedImage
+    ? createPortal(
+        <div
+          className="image-modal image-modal--swiper"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Xem ảnh ${selectedImage.name}`}
+        >
+          {/* Nút đóng — fixed góc trên phải, safe area iOS */}
+          <button
+            ref={modalCloseRef}
+            type="button"
+            className="image-modal-close"
+            onClick={closeImageModal}
+            aria-label="Đóng"
+          >
+            ×
+          </button>
+
+          {/* Swiper carousel fullscreen */}
+          <Swiper
+            modules={[Navigation, Keyboard, A11y]}
+            navigation={sortedImages.length > 1}
+            keyboard={{ enabled: true }}
+            initialSlide={modalImageIndex >= 0 ? modalImageIndex : 0}
+            className="image-modal-swiper"
+            // touch-action được set ở CSS để Safari không intercept swipe
+            onSlideChange={(swiper) => {
+              const nextImage = sortedImages[swiper.activeIndex];
+              if (nextImage && nextImage._id !== selectedImage._id) {
+                setSelectedImage(nextImage);
+              }
+            }}
+          >
+            {sortedImages.map((image) => (
+              <SwiperSlide key={`modal-slide-${image._id}`}>
+                <img
+                  src={getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })}
+                  srcSet={[
+                    `${getImageUrl(image.imageUrl, { width: 640, crop: 'limit' })} 640w`,
+                    `${getImageUrl(image.imageUrl, { width: 960, crop: 'limit' })} 960w`,
+                    `${getImageUrl(image.imageUrl, { width: 1280, crop: 'limit' })} 1280w`,
+                  ].join(', ')}
+                  sizes="100vw"
+                  alt={image.name}
+                  className="image-modal-image"
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = publicAsset('placeholder.jpg');
+                  }}
+                />
+                {/* Info overlay gradient ở cuối mỗi slide */}
+                <div className="image-modal-info">
+                  <h3 className="image-modal-title">{image.name}</h3>
+                  <div className="image-modal-meta">
+                    {getImageStoneTypes(image).map((type) => (
+                      <span key={`${image._id}-modal-stone-${type}`} className="image-modal-tag">
+                        {type}
+                      </span>
+                    ))}
+                    {getImageSurfaces(image).map((surface) => (
+                      <span key={`${image._id}-${surface}`} className="image-modal-tag">
+                        {surface}
+                      </span>
+                    ))}
+                    {(Array.isArray(image.wallPosition)
+                      ? image.wallPosition
+                      : [image.wallPosition]
+                    ).map((wp) => (
+                      <span key={`${image._id}-wp-${wp}`} className="image-modal-tag">
+                        {wp}
+                      </span>
+                    ))}
+                  </div>
+                  {image.description && (
+                    <p className="image-modal-description">{image.description}</p>
+                  )}
+                  {sortedImages.length > 1 && (
+                    <p className="image-modal-hint">Vuốt trái/phải để xem ảnh khác · Esc để đóng</p>
+                  )}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>,
+        document.body
+      )
+    : null;
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="showroom">
       <div className="showroom-container">
         <div className="showroom-layout">
           <aside className="showroom-sidebar">
-            {/* Filter bar - phong cách card nhẹ */}
             <div className="showroom-filters">
+              {/* Mobile toolbar */}
               <div
                 className={`showroom-mobile-toolbar ${
                   isMobileToolbarHidden && !isMobileFiltersOpen ? 'is-hidden' : ''
@@ -786,11 +709,11 @@ const Showroom = () => {
                   {listMeta?.total ?? sortedImages.length} ảnh
                 </span>
               </div>
+
+              {/* FAB mobile */}
               <button
                 type="button"
-                className={`showroom-mobile-fab ${
-                  shouldShowMobileFab ? 'is-visible' : ''
-                }`}
+                className={`showroom-mobile-fab ${shouldShowMobileFab ? 'is-visible' : ''}`}
                 onClick={() => {
                   triggerMobileTapFeedback();
                   setIsMobileFiltersOpen(true);
@@ -809,12 +732,16 @@ const Showroom = () => {
                 </span>
                 Lọc {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}
               </button>
+
+              {/* Overlay backdrop mobile filters */}
               <button
                 type="button"
                 className={`showroom-filters-overlay ${isMobileFiltersOpen ? 'is-open' : ''}`}
                 onClick={() => setIsMobileFiltersOpen(false)}
                 aria-label="Đóng bộ lọc"
               />
+
+              {/* Filter panel */}
               <div
                 id="showroom-filter-panel"
                 className={`filter-card ${isMobileFiltersOpen ? 'is-open' : ''}`}
@@ -830,59 +757,53 @@ const Showroom = () => {
                     ×
                   </button>
                 </div>
+
                 <div className="filter-row-main">
+                  {/* Loại đá */}
                   <div className="filter-field">
                     <label htmlFor="stoneType">🪨 Loại đá</label>
-                    <select
-                      id="stoneType"
-                      value={selectedStoneType}
-                      onChange={handleStoneTypeChange}
-                    >
+                    <select id="stoneType" value={selectedStoneType} onChange={handleStoneTypeChange}>
                       <option value="">Tất cả</option>
                       {isLoadingStoneTypes ? (
                         <option disabled>Đang tải...</option>
                       ) : (
                         sortedStoneTypes.map((type) => (
-                          <option key={type.name} value={type.name}>
-                            {type.name}
-                          </option>
+                          <option key={type.name} value={type.name}>{type.name}</option>
                         ))
                       )}
                     </select>
                   </div>
+
+                  {/* Sắp xếp */}
                   <div className="filter-field">
                     <label htmlFor="sortOrder">↕️ Sắp xếp</label>
                     <select
                       id="sortOrder"
                       value={sortOrder}
-                      onChange={(e) =>
-                        setSortOrder(e.target.value as 'az' | 'za' | 'default')
-                      }
+                      onChange={(e) => setSortOrder(e.target.value as 'az' | 'za' | 'default')}
                     >
                       <option value="az">A - Z</option>
                       <option value="za">Z - A</option>
                       <option value="default">Mặc định</option>
                     </select>
                   </div>
+
+                  {/* Bề mặt */}
                   <div className="filter-field">
                     <label htmlFor="be_mat">✨ Bề mặt</label>
-                    <select
-                      id="be_mat"
-                      value={selectedBeMat}
-                      onChange={handleBeMatChange}
-                    >
+                    <select id="be_mat" value={selectedBeMat} onChange={handleBeMatChange}>
                       <option value="">Tất cả</option>
                       {isLoadingBeMat ? (
                         <option disabled>Đang tải...</option>
                       ) : (
                         sortedBeMat.map((beMat) => (
-                          <option key={beMat} value={beMat}>
-                            {beMat}
-                          </option>
+                          <option key={beMat} value={beMat}>{beMat}</option>
                         ))
                       )}
                     </select>
                   </div>
+
+                  {/* Số ảnh / trang */}
                   <div className="filter-field">
                     <label htmlFor="showroomPageSize">🔢 Hiển thị</label>
                     <select
@@ -896,6 +817,8 @@ const Showroom = () => {
                       <option value={36}>36 ảnh</option>
                     </select>
                   </div>
+
+                  {/* Vị trí sử dụng */}
                   <div className="filter-row-positions">
                     <div className="filter-positions-head">
                       <span className="filter-positions-label">Vị trí sử dụng</span>
@@ -904,11 +827,7 @@ const Showroom = () => {
                       </span>
                     </div>
                     <div className="filter-chips-wrap">
-                      <div
-                        className="filter-chips-scroll"
-                        role="group"
-                        aria-label="Chọn vị trí ốp"
-                      >
+                      <div className="filter-chips-scroll" role="group" aria-label="Chọn vị trí ốp">
                         <button
                           type="button"
                           className={`filter-chip ${selectedWallPosition.length === 0 ? 'is-selected' : ''}`}
@@ -920,38 +839,33 @@ const Showroom = () => {
                         >
                           Tất cả
                         </button>
-                        {wallPositionGroups.otherGroup.map((position) => {
-                          const selected = selectedWallPosition.includes(position);
-                          return (
-                            <button
-                              key={position}
-                              type="button"
-                              className={`filter-chip ${selected ? 'is-selected' : ''}`}
-                              onClick={() => toggleWallPosition(position)}
-                            >
-                              {position}
-                            </button>
-                          );
-                        })}
+                        {wallPositionGroups.otherGroup.map((position) => (
+                          <button
+                            key={position}
+                            type="button"
+                            className={`filter-chip ${selectedWallPosition.includes(position) ? 'is-selected' : ''}`}
+                            onClick={() => toggleWallPosition(position)}
+                          >
+                            {position}
+                          </button>
+                        ))}
                         {wallPositionGroups.opGroup.length > 0 && (
                           <span className="filter-chip-group-label">Nhóm Ốp</span>
                         )}
-                        {wallPositionGroups.opGroup.map((position) => {
-                          const selected = selectedWallPosition.includes(position);
-                          return (
-                            <button
-                              key={position}
-                              type="button"
-                              className={`filter-chip ${selected ? 'is-selected' : ''}`}
-                              onClick={() => toggleWallPosition(position)}
-                            >
-                              {position}
-                            </button>
-                          );
-                        })}
+                        {wallPositionGroups.opGroup.map((position) => (
+                          <button
+                            key={position}
+                            type="button"
+                            className={`filter-chip ${selectedWallPosition.includes(position) ? 'is-selected' : ''}`}
+                            onClick={() => toggleWallPosition(position)}
+                          >
+                            {position}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
+
                   {hasActiveFilters && (
                     <button
                       type="button"
@@ -965,6 +879,7 @@ const Showroom = () => {
                     </button>
                   )}
                 </div>
+
                 <div className="filter-mobile-actions">
                   <button
                     type="button"
@@ -974,11 +889,10 @@ const Showroom = () => {
                     Xem kết quả
                   </button>
                 </div>
+
+                {/* Active filter chips */}
                 {hasActiveFilters && (
-                  <div
-                    className="filter-active-bar"
-                    aria-label="Bộ lọc đang áp dụng"
-                  >
+                  <div className="filter-active-bar" aria-label="Bộ lọc đang áp dụng">
                     <span className="filter-active-title">Đang lọc</span>
                     <div className="filter-active-chips">
                       {selectedStoneType && (
@@ -990,9 +904,7 @@ const Showroom = () => {
                         >
                           <span className="filter-active-chip-label">Loại đá</span>
                           <span className="filter-active-chip-value">{selectedStoneType}</span>
-                          <span className="filter-active-chip-remove" aria-hidden>
-                            ×
-                          </span>
+                          <span className="filter-active-chip-remove" aria-hidden>×</span>
                         </button>
                       )}
                       {selectedBeMat && (
@@ -1004,9 +916,7 @@ const Showroom = () => {
                         >
                           <span className="filter-active-chip-label">Bề mặt</span>
                           <span className="filter-active-chip-value">{selectedBeMat}</span>
-                          <span className="filter-active-chip-remove" aria-hidden>
-                            ×
-                          </span>
+                          <span className="filter-active-chip-remove" aria-hidden>×</span>
                         </button>
                       )}
                       {selectedWallPosition.map((position) => (
@@ -1019,9 +929,7 @@ const Showroom = () => {
                         >
                           <span className="filter-active-chip-label">Vị trí</span>
                           <span className="filter-active-chip-value">{position}</span>
-                          <span className="filter-active-chip-remove" aria-hidden>
-                            ×
-                          </span>
+                          <span className="filter-active-chip-remove" aria-hidden>×</span>
                         </button>
                       ))}
                     </div>
@@ -1040,9 +948,7 @@ const Showroom = () => {
                   <button
                     type="button"
                     className="showroom-toast-retry"
-                    onClick={() =>
-                      loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition)
-                    }
+                    onClick={() => loadFirstPage(selectedStoneType, selectedBeMat, selectedWallPosition)}
                   >
                     Thử lại
                   </button>
@@ -1058,7 +964,7 @@ const Showroom = () => {
               </div>
             )}
 
-            {/* Skeleton khi tải trang đầu */}
+            {/* Skeleton */}
             {loading && images.length === 0 && (
               <div
                 className="showroom-skeleton-grid"
@@ -1102,8 +1008,7 @@ const Showroom = () => {
                 ) : (
                   <>
                     <div className="showroom-count">
-                      Hiển thị {sortedImages.length} /{' '}
-                      {listMeta?.total ?? sortedImages.length} ảnh
+                      Hiển thị {sortedImages.length} / {listMeta?.total ?? sortedImages.length} ảnh
                     </div>
                     <div className="showroom-gallery">
                       {sortedImages.map((image, idx) => (
@@ -1160,6 +1065,7 @@ const Showroom = () => {
                         </button>
                       ))}
                     </div>
+
                     {hasMore && (
                       <div className="showroom-load-more-wrap">
                         <button
@@ -1178,7 +1084,9 @@ const Showroom = () => {
             )}
           </section>
         </div>
-        {imageModal && (typeof document !== 'undefined' ? createPortal(imageModal, document.body) : imageModal)}
+
+        {/* Modal portal */}
+        {imageModal}
       </div>
     </div>
   );

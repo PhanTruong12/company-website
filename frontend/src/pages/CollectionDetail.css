@@ -1,3 +1,5 @@
+/* CollectionDetail.css */
+
 .collection-detail-page {
   min-height: 100vh;
   background: #f6f4ee;
@@ -105,6 +107,8 @@
 
 .collection-detail-gallery-wrapper {
   padding: 0 16px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 @media (min-width: 1024px) {
@@ -113,52 +117,25 @@
   }
 }
 
-.collection-detail-gallery-container {
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
+/* Thêm padding cho Swiper container để shadow khi hover không bị cắt */
+.collection-detail-swiper {
+  padding: 16px 4px 32px !important; 
 }
 
-.collection-detail-gallery {
-  display: flex;
-  gap: 20px;
-  width: fit-content;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  padding: 12px 0 20px;
-}
-
-.collection-detail-gallery::-webkit-scrollbar {
-  display: none;
-}
-
-.collection-detail-gallery:active {
-  cursor: grabbing;
-}
-
-.collection-detail-gallery::-webkit-scrollbar {
-  display: none;
-}
-
+/* Swiper Slide đóng vai trò là Card */
 .collection-detail-card {
-  flex-shrink: 0;
-  width: 280px;
-  overflow: hidden;
+  width: 280px !important; /* Bắt buộc để slidesPerView="auto" hoạt động */
   border-radius: 12px;
   box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.2);
   background: #fff;
-  scroll-snap-align: start;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   aspect-ratio: 16 / 9;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.collection-detail-card:active {
+  cursor: grabbing;
 }
 
 .collection-detail-card:hover {
@@ -171,26 +148,17 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none; /* Tránh tình trạng trình duyệt bắt sự kiện kéo ảnh mặc định */
 }
 
 @media (min-width: 640px) {
   .collection-detail-card {
-    width: 320px;
-  }
-  
-  .collection-detail-gallery {
-    gap: 24px;
+    width: 320px !important;
   }
 }
 
 @media (min-width: 1024px) {
   .collection-detail-card {
-    width: 380px;
-  }
-  
-  .collection-detail-gallery {
-    gap: 28px;
-    padding: 16px 0 24px;
+    width: 380px !important;
   }
 }
-

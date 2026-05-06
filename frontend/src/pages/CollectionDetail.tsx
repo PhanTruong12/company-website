@@ -1,27 +1,21 @@
+// CollectionDetail.tsx
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getImagesByCollectionAndCategory } from '../data/collectionImages';
-import { useDragScroll } from '../hooks/useDragScroll';
+
+// Import Swiper React components & modules
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { FreeMode, Mousewheel } from 'swiper/modules';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/free-mode';
+
 import './CollectionDetail.css';
 
 const CollectionDetail = () => {
   const { collectionId } = useParams<{ collectionId: string }>();
   const [activeTab, setActiveTab] = useState('cau-thang');
-
-  const {
-    scrollContainerRef,
-    onMouseDown,
-    onMouseLeave,
-    onMouseUp,
-    onMouseMove,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-    onKeyDown,
-    tabIndex,
-  } = useDragScroll({
-    resetKey: `${collectionId ?? 'thach-anh'}-${activeTab}`,
-  });
 
   // Map collection IDs to titles
   const collectionTitles: { [key: string]: string } = {
@@ -65,28 +59,26 @@ const CollectionDetail = () => {
         </div>
 
         <div className="collection-detail-gallery-wrapper">
-          <div className="collection-detail-gallery-container">
-            <div
-              ref={scrollContainerRef}
-              className="collection-detail-gallery"
-              onMouseDown={onMouseDown}
-              onMouseLeave={onMouseLeave}
-              onMouseUp={onMouseUp}
-              onMouseMove={onMouseMove}
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-              onKeyDown={onKeyDown}
-              tabIndex={tabIndex}
-              aria-label={`${title} — ${tabs.find((t) => t.id === activeTab)?.label ?? ''}`}
-            >
-              {images.map((img, idx) => (
-                <div className="collection-detail-card" key={`${img}-${idx}`}>
-                  <img src={img} alt={`${title} - ${activeTab} ${idx + 1}`} loading="lazy" />
-                </div>
-              ))}
-            </div>
-          </div>
+          <Swiper
+            modules={[FreeMode, Mousewheel]}
+            slidesPerView="auto" 
+            freeMode={true}
+            mousewheel={{ forceToAxis: true }}
+            grabCursor={true}
+            spaceBetween={20}
+            breakpoints={{
+              640: { spaceBetween: 24 },
+              1024: { spaceBetween: 28 }
+            }}
+            className="collection-detail-swiper"
+            aria-label={`${title} — ${tabs.find((t) => t.id === activeTab)?.label ?? ''}`}
+          >
+            {images.map((img, idx) => (
+              <SwiperSlide key={`${img}-${idx}`} className="collection-detail-card">
+                <img src={img} alt={`${title} - ${activeTab} ${idx + 1}`} loading="lazy" />
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       </div>
     </div>
