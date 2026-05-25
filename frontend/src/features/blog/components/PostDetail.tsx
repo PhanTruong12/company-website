@@ -7,6 +7,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import { blogApi } from '../api';
 import type { BlogPost } from '../types';
 import { subscribeBlogUpdated } from '../../../utils/blogSync';
+import { useMetaTags } from '../../../hooks/useMetaTags';
 
 interface PostDetailProps {
   postIdOrSlug: string;
@@ -84,6 +85,17 @@ export const PostDetail = ({ postIdOrSlug }: PostDetailProps) => {
     });
     return unsubscribe;
   }, [postIdOrSlug, postQuery.data?._id, queryClient]);
+
+  // Cập nhật meta tags khi bài viết được load
+  useMetaTags({
+    title: postQuery.data?.title || 'TND Granite - Blog',
+    description:
+      postQuery.data?.content?.substring(0, 160).replace(/<[^>]*>/g, '') ||
+      'Xem bài viết trên blog TND Granite',
+    image: postQuery.data?.coverImage || 'https://tndgranite.com/logo.jpg',
+    url: window.location.href,
+    type: 'article',
+  });
 
   if (postQuery.isLoading) {
     return <p className="blog-filter-meta">Đang tải chi tiết bài viết...</p>;

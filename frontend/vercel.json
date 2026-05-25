@@ -7,6 +7,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/blog/:slug",
+      "destination": "/api/social-preview?slug=:slug"
+    },
+    {
       "source": "/assets/(.*)",
       "destination": "/assets/$1"
     },

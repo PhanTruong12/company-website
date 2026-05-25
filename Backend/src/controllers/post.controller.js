@@ -25,9 +25,12 @@ exports.getPostById = asyncHandler(async (req, res) => {
     throw new NotFoundError('Bài viết không tồn tại');
   }
 
-  post.views += 1;
-  await post.save();
-  emitPostsUpdated({ action: 'viewed', post });
+  const shouldTrackView = !(req.query?.preview === '1' || req.query?.trackView === '0');
+  if (shouldTrackView) {
+    post.views += 1;
+    await post.save();
+    emitPostsUpdated({ action: 'viewed', post });
+  }
 
   sendSuccess(res, mapPost(post), 'Lấy chi tiết bài viết thành công');
 });
