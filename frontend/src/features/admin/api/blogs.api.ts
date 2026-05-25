@@ -56,3 +56,17 @@ export const deleteAdminBlog = async (id: string): Promise<void> => {
     throw handleApiError(error);
   }
 };
+
+export const uploadBlogCover = async (file: File): Promise<string> => {
+  try {
+    const formData = new FormData();
+    formData.append('cover', file);
+    const response = await adminApiClient.post<ApiResponse<{ url: string }>>('/admin/blogs/upload-cover', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    if (!response.data.data?.url) throw new Error('Không nhận được URL ảnh');
+    return response.data.data.url;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};

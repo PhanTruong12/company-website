@@ -86,3 +86,17 @@ exports.deletePost = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.uploadCover = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new BadRequestError('Vui lòng chọn ảnh để upload');
+    }
+    // Cloudinary returns full URL in req.file.path
+    // Local multer returns relative path – build absolute URL
+    const imageUrl = req.file.path || `/uploads/interior-images/${req.file.filename}`;
+    sendSuccess(res, { url: imageUrl }, 'Upload ảnh bìa thành công');
+  } catch (error) {
+    next(error);
+  }
+};

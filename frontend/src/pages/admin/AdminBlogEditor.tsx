@@ -8,6 +8,7 @@ import {
   createAdminBlog,
   getAdminBlogs,
   updateAdminBlog,
+  uploadBlogCover,
   type AdminBlogPost,
 } from '../../features/admin/api';
 import { subscribeBlogUpdated } from '../../utils/blogSync';
@@ -47,6 +48,7 @@ const BlogEditorForm = ({ initialBlog, blogId, isEditMode }: BlogEditorFormProps
   const [slugTouched, setSlugTouched] = useState(false);
   const [coverPreview, setCoverPreview] = useState(initialBlog?.coverImage ?? '');
   const [submitError, setSubmitError] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<Quill | null>(null);
@@ -123,13 +125,17 @@ const BlogEditorForm = ({ initialBlog, blogId, isEditMode }: BlogEditorFormProps
       event.target.value = '';
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '');
-      setFormData((prev) => ({ ...prev, coverImage: dataUrl }));
-      setCoverPreview(dataUrl);
-    };
-    reader.readAsDataURL(file);
+    setCoverUploading(true);
+    try {
+      const url = await uploadBlogCover(file);
+      setFormData((prev) => ({ ...prev, coverImage: url }));
+      setCoverPreview(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload ảnh bìa thất bại');
+    } finally {
+      setCoverUploading(false);
+      event.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,8 +206,8 @@ const BlogEditorForm = ({ initialBlog, blogId, isEditMode }: BlogEditorFormProps
             <label>Ảnh (tùy chọn)</label>
             <div className="admin-cover-dropzone">
               {coverPreview ? <img src={coverPreview} alt="Ảnh bìa" className="admin-cover-preview" /> : null}
-              <button type="button" className="btn-secondary admin-cover-picker-btn" onClick={() => imageInputRef.current?.click()}>
-                Chọn ảnh
+              <button type="button" className="btn-secondary admin-cover-picker-btn" onClick={() => imageInputRef.current?.click()} disabled={coverUploading}>
+                {coverUploading ? 'Đang upload...' : 'Chọn ảnh'}
               </button>
               <input ref={imageInputRef} type="file" accept="image/*" onChange={handlePickCover} className="admin-hidden-file" />
             </div>
